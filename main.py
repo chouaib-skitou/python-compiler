@@ -10,6 +10,7 @@ TOKEN_TYPES = {
     'CLOSE_PAREN': 'CLOSE_PAREN',
     'OPEN_PAREN': 'OPEN_PAREN',
     'MOD': 'MOD',
+    'IDENTIFIER': 'IDENTIFIER',
 }
 
 class Token:
@@ -57,6 +58,8 @@ class Lexer:
                 self.token = Token(TOKEN_TYPES['OPEN_PAREN'], token)
             elif token == ')':
                 self.token = Token(TOKEN_TYPES['CLOSE_PAREN'], token)
+            elif token.isalnum():
+                self.token = Token(TOKEN_TYPES['IDENTIFIER'], token)
             else:
                 raise Exception("Invalid token")
         else:
@@ -80,7 +83,8 @@ class Lexer:
 
 # Main program
 def main():
-    text = '( 44 + 412 - 22 % 2 )'
+    with open('test_1.txt', 'r') as file:
+        text = file.read()
     lexer = Lexer(text)
 
     while lexer.token.type != EOF:
