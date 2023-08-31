@@ -1,7 +1,7 @@
 EOF = 'EOF'
 
 TOKEN_TYPES = {
-    'INTEGER': 'INTEGER',
+    'CONSTANT': 'CONSTANT',
     'PLUS': 'PLUS',
     'MINUS': 'MINUS',
     'MUL': 'MUL',
@@ -24,72 +24,76 @@ class Token:
     def get_value(self):
         return self.value
 
-    def __str__(self):
-        return f"Token({self.type}, {self.value})"
+    def affiche(self):
+        print("Le token est de type : ", self.type, " et sa valeur est : ", self.value)
     
+tokenG = Token('test',0) #token courant
+last = Token('test',1) #token précédent 
 
-class Lexer:
-    def __init__(self, text):
-        self.tokens = text.split()
-        self.pos = 0
-        self.token = None
-        self.last = None
-        self.next()
+def next(chaine):
+        position = 0
+    
+        while (position < len(chaine)) : #tant qu'on est pas arrivé à la fin de la chaine, on incrémente position
+            #déclaration de variable global
+            global last
+            global tokenG
+            last = tokenG # last devient la dernier token reçu
+            c = chaine[position]
 
-    def next(self):
-        if self.pos < len(self.tokens):
-            self.last = self.token
-            token = self.tokens[self.pos]
-            self.pos += 1
-
-            if token.isdigit():
-                self.token = Token(TOKEN_TYPES['INTEGER'], token)
-            elif token == '+':
-                self.token = Token(TOKEN_TYPES['PLUS'], token)
-            elif token == '-':
-                self.token = Token(TOKEN_TYPES['MINUS'], token)
-            elif token == '*':
-                self.token = Token(TOKEN_TYPES['MUL'], token)
-            elif token == '/':
-                self.token = Token(TOKEN_TYPES['DIV'], token)
-            elif token == '%':
-                self.token = Token(TOKEN_TYPES['MOD'], token)
-            elif token == '(':
-                self.token = Token(TOKEN_TYPES['OPEN_PAREN'], token)
-            elif token == ')':
-                self.token = Token(TOKEN_TYPES['CLOSE_PAREN'], token)
-            elif token.isalnum():
-                self.token = Token(TOKEN_TYPES['IDENTIFIER'], token)
+            if c.isspace():
+                position += 1
+                continue  # Skip spaces
+            elif c.isdigit():
+                constant_value = c
+                position += 1
+                while position < len(chaine) and chaine[position].isdigit():
+                    constant_value += chaine[position]
+                    position += 1
+                tokenG = Token(TOKEN_TYPES['CONSTANT'], constant_value)
+            elif c == '+':
+                tokenG = Token(TOKEN_TYPES['PLUS'], c)
+            elif c == '-':
+                tokenG = Token(TOKEN_TYPES['MINUS'], c)
+            elif c == '*':
+                tokenG = Token(TOKEN_TYPES['MUL'], c)
+            elif c == '/':
+                tokenG = Token(TOKEN_TYPES['DIV'], c)
+            elif c == '%':
+                tokenG = Token(TOKEN_TYPES['MOD'], c)
+            elif c == '(':
+                tokenG = Token(TOKEN_TYPES['OPEN_PAREN'], c)
+            elif c == ')':
+                tokenG = Token(TOKEN_TYPES['CLOSE_PAREN'], c)
+            elif c.isalnum():
+                identifier_value = c
+                position += 1
+                while position < len(chaine) and (chaine[position].isalnum() or chaine[position] == '_'):
+                    identifier_value += chaine[position]
+                    position += 1
+                tokenG = Token(TOKEN_TYPES['IDENTIFIER'], identifier_value)
             else:
-                raise Exception("Invalid token")
-        else:
-            self.token = Token(TOKEN_TYPES['EOF'], None)
-            self.last = None
+                raise Exception("Le token est invalid")
+            
+            tokenG.affiche()
+            position = position + 1
 
-    def check(self, token_type):
-        return self.token.type == TOKEN_TYPES[token_type]
+        return Token("EOF",None)
 
-    def accept(self, token_type):
-        if self.check(token_type):
-            self.next()
-            return True
-        return False
+def check(self, token_type):
+    return tokenG.type == TOKEN_TYPES[token_type]
 
-    def lecture(self):
-        if self.token is not None:
-            return self.token.value
-        return None
+def accept(self, token_type):
+    if not self.check(token_type):
+        self.next()
+        return True
+    return False
     
 
 # Main program
 def main():
     with open('test_1.txt', 'r') as file:
         text = file.read()
-    lexer = Lexer(text)
-
-    while lexer.token.type != EOF:
-        print(lexer.token)
-        lexer.next()
+    print(next(text))
 
 if __name__ == '__main__':
     main()
