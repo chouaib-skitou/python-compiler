@@ -52,6 +52,7 @@ class Token:
 
     def affiche(self):
         print("Le token est de type : ", self.type, " et sa valeur est : ", self.value)
+
     
 tokenG = Token('test',0) #token courant
 last = Token('test',1) #token précédent 
@@ -122,7 +123,7 @@ def accept(self, token_type):
 def main():
     with open('test_1.txt', 'r') as file:
         text = file.read()
-    print(next(text))
+    next(text)
 
 if __name__ == '__main__':
     main()
