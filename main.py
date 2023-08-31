@@ -12,6 +12,32 @@ TOKEN_TYPES = {
     'MOD': 'MOD',
     'IDENTIFIER': 'IDENTIFIER',
 }
+MOTS_CLES = {
+    'int': 'int',
+    'while': 'while',
+    'if': 'if',
+    'else': 'else',
+    'return': 'return',
+    'main': 'main',
+    'void': 'void',
+    'char': 'char',
+    'float': 'float',
+    'double': 'double',
+    'for': 'for',
+    'do': 'do',
+    'switch': 'switch',
+    'case': 'case',
+    'break': 'break',
+    'continue': 'continue',
+    'struct': 'struct',
+    'typedef': 'typedef',
+    'enum': 'enum',
+    'unsigned': 'unsigned',
+    'long': 'long',
+    'short': 'short',
+    'signed': 'signed',
+
+}
 
 class Token:
     def __init__(self, type, value):
@@ -70,7 +96,10 @@ def next(chaine):
                 while position < len(chaine) and (chaine[position].isalnum() or chaine[position] == '_'):
                     identifier_value += chaine[position]
                     position += 1
-                tokenG = Token(TOKEN_TYPES['IDENTIFIER'], identifier_value)
+                if identifier_value in MOTS_CLES:
+                    tokenG = Token(MOTS_CLES[identifier_value], identifier_value)
+                else:
+                    tokenG = Token(TOKEN_TYPES['IDENTIFIER'], identifier_value)
             else:
                 raise Exception("Le token est invalid")
             
