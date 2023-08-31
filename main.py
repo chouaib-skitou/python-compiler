@@ -53,6 +53,26 @@ class Token:
     def affiche(self):
         print("Le token est de type : ", self.type, " et sa valeur est : ", self.value)
     
+class Node:
+    def __init__(self, type, value):
+        self.type = type
+        self.value = value
+        self.children = []
+    
+    def get_type(self):
+        return self.type
+    
+    def get_value(self):
+        return self.value
+
+    def get_children(self):
+        return self.children
+
+    def affiche(self):
+        print("Le noeud est de type : ", self.type, " et sa valeur est : ", self.value)
+        for child in self.children:
+            child.affiche()
+
 tokenG = Token('test',0) #token courant
 last = Token('test',1) #token précédent 
 
