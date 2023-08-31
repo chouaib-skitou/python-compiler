@@ -12,6 +12,10 @@ TOKEN_TYPES = {
     'MOD': 'MOD',
     'IDENTIFIER': 'IDENTIFIER',
 }
+NODES_TYPES = {
+    'NODE_CLOSE_PAREN': 'NODE_CLOSE_PAREN',
+    'NODE_OPEN_PAREN': 'NODE_OPEN_PAREN',
+}
 MOTS_CLES = {
     'int': 'int',
     'while': 'while',
@@ -36,7 +40,6 @@ MOTS_CLES = {
     'long': 'long',
     'short': 'short',
     'signed': 'signed',
-
 }
 
 class Token:
@@ -72,6 +75,11 @@ class Node:
         print("Le noeud est de type : ", self.type, " et sa valeur est : ", self.value)
         for child in self.children:
             child.affiche()
+
+
+
+    
+
 
 tokenG = Token('test',0) #token courant
 last = Token('test',1) #token précédent 
