@@ -30,6 +30,9 @@ NODES_TYPES = {
     'NODE_MINUS_BINARY': 'NODE_MINUS_BINARY',
     'NODE_NOT': 'NODE_NOT',
     'NODE_PLUS': 'NODE_PLUS',
+    'NODE_MUL' : 'NODE_MUL',
+    'NODE_DIV' : 'NODE_DIV',
+    'NODE_MOD' : 'NODE_MOD',
 
 }
 MOTS_CLES = {
@@ -70,6 +73,10 @@ OPERATORS = {
     TOKEN_TYPES['MINUS']: ValOpe('MINUS',6,0),
     TOKEN_TYPES['MUL']: ValOpe('MUL',7,0),
     TOKEN_TYPES['DIV']: ValOpe('DIV',7,0),
+    TOKEN_TYPES['MOD']: ValOpe('MOD',7,0),
+    TOKEN_TYPES['EQUAL']: ValOpe('EQUAL',1,0),
+    TOKEN_TYPES['MOD']: ValOpe('MOD',7,0),
+    TOKEN_TYPES['MOD']: ValOpe('MOD',7,0),
     TOKEN_TYPES['MOD']: ValOpe('MOD',7,0),
 
 }
@@ -202,6 +209,7 @@ def next(chaine):
                 raise Exception("Le token est invalid")
             
             tokenG.affiche()
+            Genecode(Atome())
             position = position + 1
 
         return Token("EOF",None)
@@ -223,7 +231,7 @@ def Atome():
     elif(check(TOKEN_TYPES['IDENTIFIER'])):
         return Node(NODES_TYPES["NODE_IDENTIFIER"],tokenG.value)
     elif(check(TOKEN_TYPES['OPEN_PAREN'])):
-        N = E()
+        N = Expression(0)
         accept(TOKEN_TYPES['CLOSE_PAREN'])
         return N
     else :
@@ -246,15 +254,15 @@ def prefix():
         N = Atome()
         return N
 
-def Expression(Prio_min): #Parseur de Brat
-    N = P()
+def Expression(Prio_min): #Parseur de Brat, gestions des associativités et des priorités
+    N = prefix()
     while(OPERATORS[tokenG.type] != None):
         Op = OPERATORS[tokenG.type]
         if(Op.priority <= Prio_min) :
             break
         else:
-            next()
-            M = E(Op.priority - Op.AaD)
+            self.next()
+            M = Expression(Op.priority - Op.AaD)
             N = Node(Op.nde,N,M)
     return N
         
@@ -272,12 +280,25 @@ def  Genecode(N):
         Genecode(N.children[0])
         Genecode(N.children[1])
         print("sub")
+    elif N.type == 'NODE_MUL':
+        Genecode(N.children[0])
+        Genecode(N.children[1])
+        print("mul")
+    elif N.type == 'NODE_DIV':
+        Genecode(N.children[0])
+        Genecode(N.children[1])
+        print("div")
+    elif N.type == 'NODE_MOD':
+        Genecode(N.children[0])
+        Genecode(N.children[1])
+        print("mod")
+
+    
 
 # Main program
 def main():
     with open('test_1.txt', 'r') as file:
         text = file.read()
     next(text)
-
 if __name__ == '__main__':
     main()
