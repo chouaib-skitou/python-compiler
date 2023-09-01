@@ -11,6 +11,17 @@ TOKEN_TYPES = {
     'OPEN_PAREN': 'OPEN_PAREN',
     'MOD': 'MOD',
     'IDENTIFIER': 'IDENTIFIER',
+    'OR': 'OR',
+    'AND': 'AND',
+    'NOT': 'NOT',
+    'AFFECTATION': 'AFFECTATION',
+    'EQUAL': 'EQUAL',
+    'NOT_EQUAL': 'NOT_EQUAL',
+    'LESS_THAN': 'LESS_THAN',
+    'LESS_THAN_EQUAL': 'LESS_THAN_EQUAL',
+    'GREATER_THAN': 'GREATER_THAN',
+    'GREATER_THAN_EQUAL': 'GREATER_THAN_EQUAL',
+
 }
 NODES_TYPES = {
     'NODE_IDENTIFIER': 'NODE_IDENTIFIER',
@@ -131,6 +142,48 @@ def next(chaine):
                 tokenG = Token(TOKEN_TYPES['DIV'], c)
             elif c == '%':
                 tokenG = Token(TOKEN_TYPES['MOD'], c)
+            elif c == '=':
+                next_char = chaine[position + 1] if position + 1 < len(chaine) else None
+                if next_char == '=':
+                    tokenG = Token(TOKEN_TYPES['EQUAL'], '==')
+                    position += 2
+                else:
+                    tokenG = Token(TOKEN_TYPES['AFFECTATION'], c)
+            elif c == '!':
+                next_char = chaine[position + 1] if position + 1 < len(chaine) else None
+                if next_char == '=':
+                    tokenG = Token(TOKEN_TYPES['NOT_EQUAL'], '!=')
+                    position += 2
+                else:
+                    tokenG = Token(TOKEN_TYPES['NOT'], '!')
+            elif c == '|':
+                next_char = chaine[position + 1] if position + 1 < len(chaine) else None
+                if next_char == '|':
+                    tokenG = Token(TOKEN_TYPES['OR'], '||')
+                    position += 2
+                else:
+                    raise Exception("Le token est invalide")
+            elif c == '&':
+                next_char = chaine[position + 1] if position + 1 < len(chaine) else None
+                if next_char == '&':
+                    tokenG = Token(TOKEN_TYPES['AND'], '&&')
+                    position += 2
+                else:
+                    raise Exception("Le token est invalide")
+            elif c == '<':
+                next_char = chaine[position + 1] if position + 1 < len(chaine) else None
+                if next_char == '=':
+                    tokenG = Token(TOKEN_TYPES['LESS_THAN_EQUAL'], '<=')
+                    position += 2
+                else:
+                    tokenG = Token(TOKEN_TYPES['LESS_THAN'], c)
+            elif c == '>':
+                next_char = chaine[position + 1] if position + 1 < len(chaine) else None
+                if next_char == '=':
+                    tokenG = Token(TOKEN_TYPES['GREATER_THAN_EQUAL'], '<=')
+                    position += 2
+                else:
+                    tokenG = Token(TOKEN_TYPES['GREATER_THAN'], c)
             elif c == '(':
                 tokenG = Token(TOKEN_TYPES['OPEN_PAREN'], c)
             elif c == ')':
