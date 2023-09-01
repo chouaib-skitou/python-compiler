@@ -118,15 +118,13 @@ class Node:
 
 tokenG = Token('test',0) #token courant
 last = Token('test',1) #token précédent 
+Token_tab =[]
 
-def next(chaine):
+def calcl():
+            
         position = 0
     
         while (position < len(chaine)) : #tant qu'on est pas arrivé à la fin de la chaine, on incrémente position
-            #déclaration de variable global
-            global last
-            global tokenG
-            last = tokenG # last devient la dernier token reçu
             c = chaine[position]
 
             if c.isspace():
@@ -208,20 +206,33 @@ def next(chaine):
             else:
                 raise Exception("Le token est invalid")
             
-            tokenG.affiche()
-            Genecode(Atome())
             position = position + 1
+            global Token_tab
+            Token_tab.append(tokenG)
 
-        return Token("EOF",None)
+        Token_tab.append(Token("EOF",None))
 
-def check(self, token_type):
+chaine = 'if ( aaa && 2 ) else (22 != 2)'
+def next(chaine):
+    #déclaration de variable global
+    global last
+    global tokenG
+for e in range(0,len(Token_tab) - 1) :
+    if e == 0:
+        tokenG = Token_tab[e]
+    else:
+        tokenG = Token_tab[e]
+        last = Token_tab[e - 1] # last devient la dernier token reçu
+
+
+def check(token_type):
     if(tokenG.type == TOKEN_TYPES[token_type]):
-        self.next()
+        next(chaine)
         return True
     else :
         return False
 
-def accept(self, token_type):
+def accept(token_type):
     if not self.check(token_type):
         raise Exception("Le token est invalid")
 
@@ -300,5 +311,8 @@ def main():
     with open('test_1.txt', 'r') as file:
         text = file.read()
     next(text)
+    calcl()
+    for e in Token_tab:
+        e.affiche()
 if __name__ == '__main__':
     main()
