@@ -74,10 +74,13 @@ OPERATORS = {
     TOKEN_TYPES['MUL']: ValOpe('MUL',7,0),
     TOKEN_TYPES['DIV']: ValOpe('DIV',7,0),
     TOKEN_TYPES['MOD']: ValOpe('MOD',7,0),
-    TOKEN_TYPES['EQUAL']: ValOpe('EQUAL',1,0),
-    TOKEN_TYPES['MOD']: ValOpe('MOD',7,0),
-    TOKEN_TYPES['MOD']: ValOpe('MOD',7,0),
-    TOKEN_TYPES['MOD']: ValOpe('MOD',7,0),
+    TOKEN_TYPES['AFFECTATION']: ValOpe('AFFECTATION',1,1),
+    TOKEN_TYPES['OR']: ValOpe('OR',2,0),
+    TOKEN_TYPES['AND']: ValOpe('AND',3,0),
+    TOKEN_TYPES['EQUAL']: ValOpe('EQUAL',4,0),
+    TOKEN_TYPES['NOT_EQUAL']: ValOpe('NOT_EQUAL',4,0),
+    TOKEN_TYPES['GREATER_THAN']: ValOpe('GREATER_THAN',5,0),
+    TOKEN_TYPES['LESS_THAN']: ValOpe('LESS_THAN',5,0),
 
 }
 
@@ -116,11 +119,11 @@ class Node:
         for child in self.children:
             child.affiche()
 
-tokenG = Token('test',0) #token courant
-last = Token('test',1) #token précédent 
+tokenG = Token(' ',0) #token courant
+last = Token(' ',1) #token précédent 
 Token_tab =[]
 
-def calcl():
+def AnaLex(chaine):
             
         position = 0
     
@@ -212,22 +215,23 @@ def calcl():
 
         Token_tab.append(Token("EOF",None))
 
-chaine = 'if ( aaa && 2 ) else (22 != 2)'
-def next(chaine):
-    #déclaration de variable global
-    global last
+positionToken_tab = 0
+def next():
+    global positionToken_tab
     global tokenG
-for e in range(0,len(Token_tab) - 1) :
-    if e == 0:
-        tokenG = Token_tab[e]
-    else:
-        tokenG = Token_tab[e]
-        last = Token_tab[e - 1] # last devient la dernier token reçu
+    global last
+    if positionToken_tab == 0:
+        tokenG = Token_tab[positionToken_tab]
+    elif positionToken_tab > 0 and positionToken_tab <= len(Token_tab) - 1:
+        tokenG = Token_tab[positionToken_tab]
+        last = Token_tab[positionToken_tab - 1]
+    positionToken_tab = positionToken_tab + 1
+    tokenG.affiche()
 
 
 def check(token_type):
     if(tokenG.type == TOKEN_TYPES[token_type]):
-        next(chaine)
+        next()
         return True
     else :
         return False
@@ -246,21 +250,21 @@ def Atome():
         accept(TOKEN_TYPES['CLOSE_PAREN'])
         return N
     else :
-        raise Exception("Le token est invalid")
+        raise Exception("Token invalid !!!")
+        
 
 def prefix():
-    if(check(TOKEN_TYPES['TOKEN_MINUS'])) :
+    if(check(TOKEN_TYPES['MINUS'])) :
         N = prefix()
         return Node(NODES_TYPES["NODE_MINUS_UNAIRY"],tokenG.value)
 
-    elif(check(TOKEN_TYPES['TOKEN_NOT'])) :
+    elif(check(TOKEN_TYPES['NOT'])) :
         N = prefix()
         return Node(NODES_TYPES["NODE_NOT"],tokenG.value)
 
-    elif(check(TOKEN_TYPES['TOKEN_PLUS'])) :
+    elif(check(TOKEN_TYPES['PLUS'])) :
         N = prefix()
         return N
-
     else :
         N = Atome()
         return N
@@ -272,7 +276,7 @@ def Expression(Prio_min): #Parseur de Brat, gestions des associativités et des 
         if(Op.priority <= Prio_min) :
             break
         else:
-            self.next()
+            next()
             M = Expression(Op.priority - Op.AaD)
             N = Node(Op.nde,N,M)
     return N
@@ -304,15 +308,20 @@ def  Genecode(N):
         Genecode(N.children[1])
         print("mod")
 
-    
+def AnaSyn():
+    return Expression(0)  
 
 # Main program
 def main():
     with open('test_1.txt', 'r') as file:
         text = file.read()
-    next(text)
-    calcl()
-    for e in Token_tab:
-        e.affiche()
+        AnaLex(text)
+        next()
+        while(tokenG.type != "EOF"):
+            A = AnaSyn()
+            Genecode(A)
+
+
+
 if __name__ == '__main__':
     main()
