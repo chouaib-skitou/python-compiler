@@ -28,6 +28,27 @@ class Noeud:
         print(f"{indent}{self.type}: {self.valeur}")
         for enfant in self.enfants:
             enfant.afficher(niveau + 1)
+    def genecode(self):
+        if self.type == "CONSTANTE":
+            return [f"push {self.valeur}"]
+        elif self.type == "UNAIRE":
+            if self.valeur == "!":
+                # À compléter pour l'opérateur unaire !
+                pass
+        elif self.type == "BINAIRE":
+            instructions_gauche = self.enfants[0].genecode()
+            instructions_droite = self.enfants[1].genecode()
+            if self.valeur == "+":
+                operation = "ADD"
+            elif self.valeur == "-":
+                operation = "SUB"
+            elif self.valeur == "*":
+                operation = "MUL"
+            elif self.valeur == "/":
+                operation = "DIV"
+            return instructions_gauche + instructions_droite + [f"push {operation}"]
+        else:
+            raise ValueError("Type de nœud inconnu")
 
 
 listeToken = []
@@ -137,7 +158,7 @@ def expression(tokens):
     noeud = prefixe(tokens)
     while tokens and tokens[0].type_ in {"PLUS", "MOINS", "MULT", "DIV"}:
         op = tokens.pop(0)
-        noeud_droit = prefixe(tokens)
+        noeud_droit = prefixe(tokens) 
         noeud_gauche = noeud
         noeud = Noeud("BINAIRE", op.valeur)
         noeud.ajouter_enfant(noeud_gauche)
@@ -159,3 +180,8 @@ print()
 print("Arbre de token :")
 racine = expression(listeToken)
 racine.afficher()
+print()
+print("Generation du code :")
+assembleur = racine.genecode()
+for instruction in assembleur:
+    print(instruction)
