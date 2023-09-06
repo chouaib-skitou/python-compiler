@@ -69,18 +69,18 @@ class ValOpe:
 
 # Table des Opérateurs avec les priorités
 OPERATORS = {
-    TOKEN_TYPES['PLUS']: ValOpe('PLUS',6,0),
-    TOKEN_TYPES['MINUS']: ValOpe('MINUS',6,0),
-    TOKEN_TYPES['MUL']: ValOpe('MUL',7,0),
-    TOKEN_TYPES['DIV']: ValOpe('DIV',7,0),
-    TOKEN_TYPES['MOD']: ValOpe('MOD',7,0),
-    TOKEN_TYPES['AFFECTATION']: ValOpe('AFFECTATION',1,1),
-    TOKEN_TYPES['OR']: ValOpe('OR',2,0),
-    TOKEN_TYPES['AND']: ValOpe('AND',3,0),
-    TOKEN_TYPES['EQUAL']: ValOpe('EQUAL',4,0),
-    TOKEN_TYPES['NOT_EQUAL']: ValOpe('NOT_EQUAL',4,0),
-    TOKEN_TYPES['GREATER_THAN']: ValOpe('GREATER_THAN',5,0),
-    TOKEN_TYPES['LESS_THAN']: ValOpe('LESS_THAN',5,0),
+    TOKEN_TYPES['PLUS']: ValOpe('NODE_PLUS',6,0),
+    TOKEN_TYPES['MINUS']: ValOpe('NODE_MINUS_BINARY',6,0),
+    TOKEN_TYPES['MUL']: ValOpe('NODE_MUL',7,0),
+    TOKEN_TYPES['DIV']: ValOpe('NODE_DIV',7,0),
+    TOKEN_TYPES['MOD']: ValOpe('NODE_MOD',7,0),
+    TOKEN_TYPES['AFFECTATION']: ValOpe('NODE_AFFECTATION',1,1),
+    TOKEN_TYPES['OR']: ValOpe('NODE_OR',2,0),
+    TOKEN_TYPES['AND']: ValOpe('NODE_AND',3,0),
+    TOKEN_TYPES['EQUAL']: ValOpe('NODE_EQUAL',4,0),
+    TOKEN_TYPES['NOT_EQUAL']: ValOpe('NODE_NOT_EQUAL',4,0),
+    TOKEN_TYPES['GREATER_THAN']: ValOpe('NODE_GREATER_THAN',5,0),
+    TOKEN_TYPES['LESS_THAN']: ValOpe('NODE_LESS_THAN',5,0),
 
 }
 
@@ -237,17 +237,18 @@ def check(token_type):
         return False
 
 def accept(token_type):
-    if not self.check(token_type):
-        raise Exception("Le token est invalid")
+    if not check(token_type):
+        raise Exception("Le token est invalid  : " + str(token_type))
 
 def Atome():
     if(check(TOKEN_TYPES['CONSTANT'])) :
-        return Node(NODES_TYPES["NODE_CONSTANT"],tokenG.value)
+        return Node(NODES_TYPES["NODE_CONSTANT"],last.value)
     elif(check(TOKEN_TYPES['IDENTIFIER'])):
-        return Node(NODES_TYPES["NODE_IDENTIFIER"],tokenG.value)
+        return Node(NODES_TYPES["NODE_IDENTIFIER"],last.value)
     elif(check(TOKEN_TYPES['OPEN_PAREN'])):
         N = Expression(0)
-        accept(TOKEN_TYPES['CLOSE_PAREN'])
+        while(last.type != TOKEN_TYPES['CLOSE_PAREN']):
+            next()
         return N
     else :
         raise Exception("Token invalid !!!")
@@ -255,12 +256,12 @@ def Atome():
 
 def prefix():
     if(check(TOKEN_TYPES['MINUS'])) :
-        N = prefix()
-        return Node(NODES_TYPES["NODE_MINUS_UNAIRY"],tokenG.value)
+        N = prefix() 
+        return Node(NODES_TYPES["NODE_MINUS_UNAIRY"],N)
 
     elif(check(TOKEN_TYPES['NOT'])) :
         N = prefix()
-        return Node(NODES_TYPES["NODE_NOT"],tokenG.value)
+        return Node(NODES_TYPES["NODE_NOT"],N)
 
     elif(check(TOKEN_TYPES['PLUS'])) :
         N = prefix()
@@ -271,19 +272,25 @@ def prefix():
 
 def Expression(Prio_min): #Parseur de Brat, gestions des associativités et des priorités
     N = prefix()
-    while(OPERATORS[tokenG.type] != None):
+    if(tokenG.type == 'EOF'):
+        return N
+    while(OPERATORS[tokenG.type] in OPERATORS):
         Op = OPERATORS[tokenG.type]
         if(Op.priority <= Prio_min) :
             break
         else:
             next()
             M = Expression(Op.priority - Op.AaD)
-            N = Node(Op.nde,N,M)
+            L = Node(Op.nde)
+            L.children[0] = N
+            L.children[1] = M
+            N = L
     return N
         
 def  Genecode(N):
+    N.affiche()
     if N.type == 'NODE_CONSTANT' :
-        print("push",N.valeur)
+        print("push",N.value)
     elif N.type == 'NODE_NOT' :
         Gencode(N.children[0])
         print("not")
@@ -320,7 +327,6 @@ def main():
         while(tokenG.type != "EOF"):
             A = AnaSyn()
             Genecode(A)
-
 
 
 if __name__ == '__main__':
