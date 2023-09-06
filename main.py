@@ -27,12 +27,12 @@ NODES_TYPES = {
     'NODE_IDENTIFIER': 'NODE_IDENTIFIER',
     'NODE_CONSTANT': 'NODE_CONSTANT',
     'NODE_MINUS_UNARY': 'NODE_MINUS_UNARY',
-    'NODE_MINUS_BINARY': 'NODE_MINUS_BINARY',
+    'BINAIRE': '-',
     'NODE_NOT': 'NODE_NOT',
-    'NODE_PLUS': 'NODE_PLUS',
-    'NODE_MUL' : 'NODE_MUL',
-    'NODE_DIV' : 'NODE_DIV',
-    'NODE_MOD' : 'NODE_MOD',
+    'BINAIRE': '+',
+    'BINAIRE' : '*',
+    'BINAIRE' : '/',
+    'BINAIRE' : '%',
 
 }
 MOTS_CLES = {
@@ -69,8 +69,8 @@ class ValOpe:
 
 # Table des Opérateurs avec les priorités
 OPERATORS = {
-    TOKEN_TYPES['PLUS']: ValOpe('NODE_PLUS',6,0),
-    TOKEN_TYPES['MINUS']: ValOpe('NODE_MINUS_BINARY',6,0),
+    TOKEN_TYPES['PLUS']: ValOpe('BINAIRE',6,0),
+    TOKEN_TYPES['MINUS']: ValOpe('NODE_MINUS_BINAIRE',6,0),
     TOKEN_TYPES['MUL']: ValOpe('NODE_MUL',7,0),
     TOKEN_TYPES['DIV']: ValOpe('NODE_DIV',7,0),
     TOKEN_TYPES['MOD']: ValOpe('NODE_MOD',7,0),
@@ -118,102 +118,123 @@ class Node:
         print("Le noeud est de type : ", self.type, " et sa valeur est : ", self.value)
         for child in self.children:
             child.affiche()
+    def genecode(self):
+        if self.type == "NODE_CONSTANT":
+            return [f"push {self.value}"]
+        elif self.type == "UNAIRE":
+            if self.valeur == "!":
+                # À compléter pour l'opérateur unaire !
+                pass
+        elif self.type == "BINAIRE":
+            instructions_gauche = self.children[0].genecode()
+            instructions_droite = self.children[1].genecode()
+            if self.value == "+":
+                operation = "ADD"
+            elif self.value == "-":
+                operation = "SUB"
+            elif self.value == "*":
+                operation = "MUL"
+            elif self.value == "/":
+                operation = "DIV"
+            return instructions_gauche + instructions_droite + [f"push {operation}"]
+        else:
+            self.affiche()
+            raise ValueError("Type de nœud inconnu")
 
 tokenG = Token(' ',0) #token courant
 last = Token(' ',1) #token précédent 
 Token_tab =[]
 
-def AnaLex(chaine):
-            
-        position = 0
-    
-        while (position < len(chaine)) : #tant qu'on est pas arrivé à la fin de la chaine, on incrémente position
-            c = chaine[position]
+def AnaLex(chaine):   
+    position = 0
 
-            if c.isspace():
+    while (position < len(chaine)) : #tant qu'on est pas arrivé à la fin de la chaine, on incrémente position
+        c = chaine[position]
+
+        if c.isspace():
+            position += 1
+            continue  # Skip spaces
+        elif c.isdigit():
+            constant_value = c
+            position += 1
+            while position < len(chaine) and chaine[position].isdigit():
+                constant_value += chaine[position]
                 position += 1
-                continue  # Skip spaces
-            elif c.isdigit():
-                constant_value = c
-                position += 1
-                while position < len(chaine) and chaine[position].isdigit():
-                    constant_value += chaine[position]
-                    position += 1
-                tokenG = Token(TOKEN_TYPES['CONSTANT'], constant_value)
-            elif c == '+':
-                tokenG = Token(TOKEN_TYPES['PLUS'], c)
-            elif c == '-':
-                tokenG = Token(TOKEN_TYPES['MINUS'], c)
-            elif c == '*':
-                tokenG = Token(TOKEN_TYPES['MUL'], c)
-            elif c == '/':
-                tokenG = Token(TOKEN_TYPES['DIV'], c)
-            elif c == '%':
-                tokenG = Token(TOKEN_TYPES['MOD'], c)
-            elif c == '=':
-                next_char = chaine[position + 1] if position + 1 < len(chaine) else None
-                if next_char == '=':
-                    tokenG = Token(TOKEN_TYPES['EQUAL'], '==')
-                    position += 2
-                else:
-                    tokenG = Token(TOKEN_TYPES['AFFECTATION'], c)
-            elif c == '!':
-                next_char = chaine[position + 1] if position + 1 < len(chaine) else None
-                if next_char == '=':
-                    tokenG = Token(TOKEN_TYPES['NOT_EQUAL'], '!=')
-                    position += 2
-                else:
-                    tokenG = Token(TOKEN_TYPES['NOT'], '!')
-            elif c == '|':
-                next_char = chaine[position + 1] if position + 1 < len(chaine) else None
-                if next_char == '|':
-                    tokenG = Token(TOKEN_TYPES['OR'], '||')
-                    position += 2
-                else:
-                    raise Exception("Le token est invalide")
-            elif c == '&':
-                next_char = chaine[position + 1] if position + 1 < len(chaine) else None
-                if next_char == '&':
-                    tokenG = Token(TOKEN_TYPES['AND'], '&&')
-                    position += 2
-                else:
-                    raise Exception("Le token est invalide")
-            elif c == '<':
-                next_char = chaine[position + 1] if position + 1 < len(chaine) else None
-                if next_char == '=':
-                    tokenG = Token(TOKEN_TYPES['LESS_THAN_EQUAL'], '<=')
-                    position += 2
-                else:
-                    tokenG = Token(TOKEN_TYPES['LESS_THAN'], c)
-            elif c == '>':
-                next_char = chaine[position + 1] if position + 1 < len(chaine) else None
-                if next_char == '=':
-                    tokenG = Token(TOKEN_TYPES['GREATER_THAN_EQUAL'], '<=')
-                    position += 2
-                else:
-                    tokenG = Token(TOKEN_TYPES['GREATER_THAN'], c)
-            elif c == '(':
-                tokenG = Token(TOKEN_TYPES['OPEN_PAREN'], c)
-            elif c == ')':
-                tokenG = Token(TOKEN_TYPES['CLOSE_PAREN'], c)
-            elif c.isalnum():
-                identifier_value = c
-                position += 1
-                while position < len(chaine) and (chaine[position].isalnum() or chaine[position] == '_'):
-                    identifier_value += chaine[position]
-                    position += 1
-                if identifier_value in MOTS_CLES:
-                    tokenG = Token(MOTS_CLES[identifier_value], identifier_value)
-                else:
-                    tokenG = Token(TOKEN_TYPES['IDENTIFIER'], identifier_value)
+            tokenG = Token(TOKEN_TYPES['CONSTANT'], constant_value)
+        elif c == '+':
+            tokenG = Token(TOKEN_TYPES['PLUS'], c)
+        elif c == '-':
+            tokenG = Token(TOKEN_TYPES['MINUS'], c)
+        elif c == '*':
+            tokenG = Token(TOKEN_TYPES['MUL'], c)
+        elif c == '/':
+            tokenG = Token(TOKEN_TYPES['DIV'], c)
+        elif c == '%':
+            tokenG = Token(TOKEN_TYPES['MOD'], c)
+        elif c == '=':
+            next_char = chaine[position + 1] if position + 1 < len(chaine) else None
+            if next_char == '=':
+                tokenG = Token(TOKEN_TYPES['EQUAL'], '==')
+                position += 2
             else:
-                raise Exception("Le token est invalid")
-            
-            position = position + 1
-            global Token_tab
-            Token_tab.append(tokenG)
+                tokenG = Token(TOKEN_TYPES['AFFECTATION'], c)
+        elif c == '!':
+            next_char = chaine[position + 1] if position + 1 < len(chaine) else None
+            if next_char == '=':
+                tokenG = Token(TOKEN_TYPES['NOT_EQUAL'], '!=')
+                position += 2
+            else:
+                tokenG = Token(TOKEN_TYPES['NOT'], '!')
+        elif c == '|':
+            next_char = chaine[position + 1] if position + 1 < len(chaine) else None
+            if next_char == '|':
+                tokenG = Token(TOKEN_TYPES['OR'], '||')
+                position += 2
+            else:
+                raise Exception("Le token est invalide")
+        elif c == '&':
+            next_char = chaine[position + 1] if position + 1 < len(chaine) else None
+            if next_char == '&':
+                tokenG = Token(TOKEN_TYPES['AND'], '&&')
+                position += 2
+            else:
+                raise Exception("Le token est invalide")
+        elif c == '<':
+            next_char = chaine[position + 1] if position + 1 < len(chaine) else None
+            if next_char == '=':
+                tokenG = Token(TOKEN_TYPES['LESS_THAN_EQUAL'], '<=')
+                position += 2
+            else:
+                tokenG = Token(TOKEN_TYPES['LESS_THAN'], c)
+        elif c == '>':
+            next_char = chaine[position + 1] if position + 1 < len(chaine) else None
+            if next_char == '=':
+                tokenG = Token(TOKEN_TYPES['GREATER_THAN_EQUAL'], '<=')
+                position += 2
+            else:
+                tokenG = Token(TOKEN_TYPES['GREATER_THAN'], c)
+        elif c == '(':
+            tokenG = Token(TOKEN_TYPES['OPEN_PAREN'], c)
+        elif c == ')':
+            tokenG = Token(TOKEN_TYPES['CLOSE_PAREN'], c)
+        elif c.isalnum():
+            identifier_value = c
+            position += 1
+            while position < len(chaine) and (chaine[position].isalnum() or chaine[position] == '_'):
+                identifier_value += chaine[position]
+                position += 1
+            if identifier_value in MOTS_CLES:
+                tokenG = Token(MOTS_CLES[identifier_value], identifier_value)
+            else:
+                tokenG = Token(TOKEN_TYPES['IDENTIFIER'], identifier_value)
+        else:
+            raise Exception("Le token est invalid")
+        
+        position = position + 1
+        global Token_tab
+        Token_tab.append(tokenG)
 
-        Token_tab.append(Token("EOF",None))
+    Token_tab.append(Token("EOF",None))
 
 positionToken_tab = 0
 def next():
@@ -246,7 +267,7 @@ def Atome():
     elif(check(TOKEN_TYPES['IDENTIFIER'])):
         return Node(NODES_TYPES["NODE_IDENTIFIER"],last.value)
     elif(check(TOKEN_TYPES['OPEN_PAREN'])):
-        N = Expression(0)
+        N = expression()
         while(last.type != TOKEN_TYPES['CLOSE_PAREN']):
             next()
         return N
@@ -270,53 +291,58 @@ def prefix():
         N = Atome()
         return N
 
-def Expression(Prio_min): #Parseur de Brat, gestions des associativités et des priorités
-    N = prefix()
-    if(tokenG.type == 'EOF'):
-        return N
-    while(OPERATORS[tokenG.type] in OPERATORS):
-        Op = OPERATORS[tokenG.type]
-        if(Op.priority <= Prio_min) :
-            break
-        else:
-            next()
-            M = Expression(Op.priority - Op.AaD)
-            L = Node(Op.nde)
-            L.children[0] = N
-            L.children[1] = M
-            N = L
-    return N
+# Fonction pour analyser les expressions
+def expression():
+    noeud = prefix()
+    while tokenG.type in {"PLUS", "MOINS", "MULT", "DIV"}:
+        op = tokenG
+        noeud_droit = prefix()
+        noeud_gauche = noeud
+        noeud = Node("BINAIRE", op.value)
+        noeud.children.append(noeud_gauche)
+        noeud.children.append(noeud_droit)
+    return noeud
+
+# def Expression(Prio_min): #Parseur de Brat, gestions des associativités et des priorités
+#     N = prefix()
+#     if(tokenG.type == 'EOF'):
+#         return N
+#     while(OPERATORS[tokenG.type] in OPERATORS):
+#         Op = OPERATORS[tokenG.type]
+#         if(Op.priority <= Prio_min) :
+#             break
+#         else:
+#             next()
+#             M = Expression(Op.priority - Op.AaD)
+#             L = Node(Op.nde)
+#             L.children[0] = N
+#             L.children[1] = M
+#             N = L
+#     return N
         
-def  Genecode(N):
-    N.affiche()
-    if N.type == 'NODE_CONSTANT' :
-        print("push",N.value)
-    elif N.type == 'NODE_NOT' :
-        Gencode(N.children[0])
-        print("not")
-    elif N.type == 'NODE_PLUS':
-        Genecode(N.children[0])
-        Genecode(N.children[1])
-        print("add")
-    elif N.type == 'NODE_MINUS_BINARY':
-        Genecode(N.children[0])
-        Genecode(N.children[1])
-        print("sub")
-    elif N.type == 'NODE_MUL':
-        Genecode(N.children[0])
-        Genecode(N.children[1])
-        print("mul")
-    elif N.type == 'NODE_DIV':
-        Genecode(N.children[0])
-        Genecode(N.children[1])
-        print("div")
-    elif N.type == 'NODE_MOD':
-        Genecode(N.children[0])
-        Genecode(N.children[1])
-        print("mod")
+# def  Genecode(N):
+#     if N.type == 'NODE_CONSTANT' :
+#         print("push",N.value)
+#     elif N.type == 'NODE_NOT' :
+#         Gencode(N.children[0])
+#         print("not")
+#     elif N.type == "BINAIRE" :
+#         Genecode(N.children[0])
+#         Genecode(N.children[1])
+#         if N.value == '-':
+#             print("sub")
+#         elif N.value == '*':
+#             print("mul")
+#         elif N.value == '/':
+#             print("div")
+#         elif N.value == '%':
+#             print("mod")
+#         elif N.value == '+':
+#             print("add")
+#     N.affiche()
 
 def AnaSyn():
-    return Expression(0)  
+    return expression()  
 
 # Main program
 def main():
@@ -326,7 +352,9 @@ def main():
         next()
         while(tokenG.type != "EOF"):
             A = AnaSyn()
-            Genecode(A)
+            assembleur = A.genecode()
+            for instruction in assembleur :
+                print(instruction)
 
 
 if __name__ == '__main__':
