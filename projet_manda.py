@@ -132,6 +132,7 @@ def analyseLexicale():
             except ValueError as e:
                 print(e)
                 break
+        listeToken.append(Token("CONSTANTE", "EOF"))
 
 # Fonction pour analyser les atomes
 def atome(tokens):
@@ -160,7 +161,7 @@ def expression(tokens):
     noeud = prefixe(tokens)
     while tokens and tokens[0].type_ in {"PLUS", "MOINS", "MULT", "DIV"}:
         op = tokens.pop(0)
-        noeud_droit = prefixe(tokens) 
+        noeud_droit = prefixe(tokens)
         noeud_gauche = noeud
         noeud = Noeud("BINAIRE", op.valeur)
         noeud.ajouter_enfant(noeud_gauche)
