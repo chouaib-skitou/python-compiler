@@ -7,13 +7,13 @@ Created on Tue Aug 29 16:50:59 2023
 """
 import re
 
-# Définition de la classe Token pour représenter les jetons
+
 class Token:
     def __init__(self, type_, valeur):
         self.type_ = type_
         self.valeur = valeur
 
-# Définition de la classe Noeud pour représenter les nœuds de l'arbre syntaxique
+
 class Noeud:
     def __init__(self, type_, valeur=None):
         self.type = type_
@@ -36,6 +36,8 @@ class Noeud:
             if self.valeur == "!":
                 # À compléter pour l'opérateur unaire !
                 pass
+        elif self.type == "IDENTIFIER":
+            pass
         elif self.type == "BINAIRE":
             instructions_gauche = self.enfants[0].genecode()
             instructions_droite = self.enfants[1].genecode()
@@ -49,14 +51,15 @@ class Noeud:
                 operation = "DIV"
             return instructions_gauche + instructions_droite + [f"push {operation}"]
         else:
-            raise ValueError("Type de nœud inconnu")
+            #raise ValueError("Type de nœud inconnu")
+            pass
 
-# Liste des tokens
+
 listeToken = []
 
-# Liste des types de tokens avec leurs expressions régulières associées
 listeTypeToken = {
     "CONSTANTE": r"[0-9]+",
+    "IDENTIFIER": r"\b[a-zA-Z][a-zA-Z0-9]*\b",
     "PLUS": r"\+",
     "MULT": r"\*",
     "DIV": r"\/",
@@ -64,9 +67,10 @@ listeTypeToken = {
     "PEXCLAMATION": r"\!",
     "PARENTHG": r"\(",
     "PARENTHD": r"\)",
+    
 }
 
-# Vérifie si le type du token actuel correspond au type spécifié
+
 def check(type_):
     global token
     if token.type_ == type_:
@@ -75,12 +79,12 @@ def check(type_):
     else:
         return False
 
-# Accepte le token du type spécifié, sinon génère une exception
+
 def accept(type_):
     if not check(type_):
         raise ValueError("Erreur Fatal")
 
-# Passe au token suivant
+
 def next():
     global positionListeToken
     global token
@@ -92,7 +96,7 @@ def next():
         last = listeToken[positionListeToken - 1]
     positionListeToken = positionListeToken + 1
 
-# Fonction d'analyse lexicale
+
 def analyseLexicale():
     global position
     global codeSource
@@ -120,6 +124,17 @@ def analyseLexicale():
                                 token = Token(cle, constante)
                                 listeToken.append(token)
                                 position = position + 1
+                            elif cle == "IDENTIFIER":
+                                identifier = caractereActuel
+                                while (
+                                    position + 1 <= len(codeSource) - 1
+                                    and codeSource[position + 1].isalnum()
+                                ):
+                                    position = position + 1
+                                    identifier = identifier + str(codeSource[position])
+                                token = Token(cle, identifier)
+                                listeToken.append(token)
+                                position = position + 1
                             else:
                                 token = Token(cle, caractereActuel)
                                 listeToken.append(token)
@@ -134,11 +149,13 @@ def analyseLexicale():
                 break
         listeToken.append(Token("CONSTANTE", "EOF"))
 
-# Fonction pour analyser les atomes
+
 def atome(tokens):
     t = tokens.pop(0)
     if t.type_ == "CONSTANTE":
         return Noeud("CONSTANTE", t.valeur)
+    elif t.type_ == "IDENTIFIER":
+        return Noeud("IDENTIFIER", t.valeur)
     elif t.type_ == "PARENTHG":
         expr = expression(tokens)
         if tokens.pop(0).type_ != "PARENTHD":
@@ -147,7 +164,7 @@ def atome(tokens):
     else:
         raise SyntaxError(f"Atome inattendu: {t.type_}")
 
-# Fonction pour analyser les opérations préfixes (opérateurs unaires)
+
 def prefixe(tokens):
     if tokens[0].type_ == "PEXCLAMATION":
         t = tokens.pop(0)
@@ -156,7 +173,7 @@ def prefixe(tokens):
         return noeud
     return atome(tokens)
 
-# Fonction pour analyser les expressions
+
 def expression(tokens):
     noeud = prefixe(tokens)
     while tokens and tokens[0].type_ in {"PLUS", "MOINS", "MULT", "DIV"}:
@@ -167,6 +184,7 @@ def expression(tokens):
         noeud.ajouter_enfant(noeud_gauche)
         noeud.ajouter_enfant(noeud_droit)
     return noeud
+
 
 codeSource = ""
 position = 0
