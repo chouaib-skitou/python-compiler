@@ -7,13 +7,13 @@ Created on Tue Aug 29 16:50:59 2023
 """
 import re
 
-
+# Définition de la classe Token pour représenter les jetons
 class Token:
     def __init__(self, type_, valeur):
         self.type_ = type_
         self.valeur = valeur
 
-
+# Définition de la classe Noeud pour représenter les nœuds de l'arbre syntaxique
 class Noeud:
     def __init__(self, type_, valeur=None):
         self.type = type_
@@ -28,6 +28,7 @@ class Noeud:
         print(f"{indent}{self.type}: {self.valeur}")
         for enfant in self.enfants:
             enfant.afficher(niveau + 1)
+
     def genecode(self):
         if self.type == "CONSTANTE":
             return [f"push {self.valeur}"]
@@ -50,9 +51,10 @@ class Noeud:
         else:
             raise ValueError("Type de nœud inconnu")
 
-
+# Liste des tokens
 listeToken = []
 
+# Liste des types de tokens avec leurs expressions régulières associées
 listeTypeToken = {
     "CONSTANTE": r"[0-9]+",
     "PLUS": r"\+",
@@ -64,7 +66,7 @@ listeTypeToken = {
     "PARENTHD": r"\)",
 }
 
-
+# Vérifie si le type du token actuel correspond au type spécifié
 def check(type_):
     global token
     if token.type_ == type_:
@@ -73,12 +75,12 @@ def check(type_):
     else:
         return False
 
-
+# Accepte le token du type spécifié, sinon génère une exception
 def accept(type_):
     if not check(type_):
         raise ValueError("Erreur Fatal")
 
-
+# Passe au token suivant
 def next():
     global positionListeToken
     global token
@@ -90,7 +92,7 @@ def next():
         last = listeToken[positionListeToken - 1]
     positionListeToken = positionListeToken + 1
 
-
+# Fonction d'analyse lexicale
 def analyseLexicale():
     global position
     global codeSource
@@ -131,7 +133,7 @@ def analyseLexicale():
                 print(e)
                 break
 
-
+# Fonction pour analyser les atomes
 def atome(tokens):
     t = tokens.pop(0)
     if t.type_ == "CONSTANTE":
@@ -144,7 +146,7 @@ def atome(tokens):
     else:
         raise SyntaxError(f"Atome inattendu: {t.type_}")
 
-
+# Fonction pour analyser les opérations préfixes (opérateurs unaires)
 def prefixe(tokens):
     if tokens[0].type_ == "PEXCLAMATION":
         t = tokens.pop(0)
@@ -153,7 +155,7 @@ def prefixe(tokens):
         return noeud
     return atome(tokens)
 
-
+# Fonction pour analyser les expressions
 def expression(tokens):
     noeud = prefixe(tokens)
     while tokens and tokens[0].type_ in {"PLUS", "MOINS", "MULT", "DIV"}:
@@ -164,7 +166,6 @@ def expression(tokens):
         noeud.ajouter_enfant(noeud_gauche)
         noeud.ajouter_enfant(noeud_droit)
     return noeud
-
 
 codeSource = ""
 position = 0
