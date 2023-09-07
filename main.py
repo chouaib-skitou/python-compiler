@@ -27,8 +27,8 @@ NODES_TYPES = {
     'NODE_IDENTIFIER': 'NODE_IDENTIFIER',
     'NODE_CONSTANT': 'NODE_CONSTANT',
     'NODE_MINUS_UNARY': 'NODE_MINUS_UNARY',
-    'BINAIRE': '-',
     'NODE_NOT': 'NODE_NOT',
+    'BINAIRE': '-',
     'BINAIRE': '+',
     'BINAIRE' : '*',
     'BINAIRE' : '/',
@@ -276,15 +276,18 @@ def Atome():
         
 
 def prefix():
-    if(check(TOKEN_TYPES['MINUS'])) :
-        N = prefix() 
-        return Node(NODES_TYPES["NODE_MINUS_UNAIRY"],N)
+    # if(check(TOKEN_TYPES['MINUS'])) :
+    #     N = prefix() 
+    #     return Node(NODES_TYPES["NODE_MINUS_UNAIRY"],N)
 
-    elif(check(TOKEN_TYPES['NOT'])) :
+    if(check(TOKEN_TYPES['NOT'])) :
         N = prefix()
         return Node(NODES_TYPES["NODE_NOT"],N)
 
     elif(check(TOKEN_TYPES['PLUS'])) :
+        N = prefix()
+        return N
+    elif(check(TOKEN_TYPES['MINUS'])) :
         N = prefix()
         return N
     else :
@@ -294,7 +297,7 @@ def prefix():
 # Fonction pour analyser les expressions
 def expression():
     noeud = prefix()
-    while tokenG.type in {"PLUS", "MOINS", "MULT", "DIV"}:
+    while tokenG.type in {"PLUS", "MINUS", "MUL", "DIV"}:
         op = tokenG
         noeud_droit = prefix()
         noeud_gauche = noeud
@@ -352,6 +355,7 @@ def main():
         next()
         while(tokenG.type != "EOF"):
             A = AnaSyn()
+            A.affiche()
             assembleur = A.genecode()
             for instruction in assembleur :
                 print(instruction)
