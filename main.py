@@ -273,12 +273,26 @@ def Atome():
         return N
     else :
         raise Exception("Token invalid !!!")
-        
+
+
+# def prefix():
+#     if(check(TOKEN_TYPES['MINUS'])) :
+#         N = prefix() 
+#         return Node(NODES_TYPES["NODE_MINUS_UNAIRY"],N)
+
+#     elif(check(TOKEN_TYPES['NOT'])) :
+#         N = prefix()
+#         return Node(NODES_TYPES["NODE_NOT"],N)
+
+#     elif(check(TOKEN_TYPES['PLUS'])) :
+#         N = prefix()
+#         return N
+#     else :
+#         N = Atome()
+#         return N
+
 
 def prefix():
-    # if(check(TOKEN_TYPES['MINUS'])) :
-    #     N = prefix() 
-    #     return Node(NODES_TYPES["NODE_MINUS_UNAIRY"],N)
 
     if(check(TOKEN_TYPES['NOT'])) :
         N = prefix()
@@ -290,6 +304,12 @@ def prefix():
     elif(check(TOKEN_TYPES['MINUS'])) :
         N = prefix()
         return N
+    elif(check(TOKEN_TYPES['MUL'])) :
+        N = prefix()
+        return N
+    elif(check(TOKEN_TYPES['DIV'])) :
+        N = prefix()
+        return N
     else :
         N = Atome()
         return N
@@ -297,7 +317,7 @@ def prefix():
 # Fonction pour analyser les expressions
 def expression():
     noeud = prefix()
-    while tokenG.type in {"PLUS", "MINUS", "MUL", "DIV"}:
+    while tokenG.type in OPERATORS:
         op = tokenG
         noeud_droit = prefix()
         noeud_gauche = noeud
