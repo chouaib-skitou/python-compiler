@@ -21,6 +21,10 @@ TOKEN_TYPES = {
     'LESS_THAN_EQUAL': 'LESS_THAN_EQUAL',
     'GREATER_THAN': 'GREATER_THAN',
     'GREATER_THAN_EQUAL': 'GREATER_THAN_EQUAL',
+    'Point_virgule' : 'Point_virgule', # Ajout du token ; pour pouvoir gérer les instructions
+    'CLOSE_ACCOLADE': 'CLOSE_ACCOLADE',
+    'OPEN_ACCOLADE': 'OPEN_ACCOLADE',
+    'DEBUG': 'DEBUG',
 
 }
 NODES_TYPES = {
@@ -33,6 +37,10 @@ NODES_TYPES = {
     'BINAIRE' : '*',
     'BINAIRE' : '/',
     'BINAIRE' : '%',
+    'Node_Empty' : 'Node_Empty',
+    'Node_Block' : 'Node_Block',
+    'Node_Debug' : 'Node_Debug',
+    'Node_Drop' : 'Node_Drop',
 
 }
 MOTS_CLES = {
@@ -165,6 +173,8 @@ def AnaLex(chaine):
             tokenG = Token(TOKEN_TYPES['PLUS'], c)
         elif c == '-':
             tokenG = Token(TOKEN_TYPES['MINUS'], c)
+        elif c == ';':
+            tokenG = Token(TOKEN_TYPES['Point_virgule'], c)
         elif c == '*':
             tokenG = Token(TOKEN_TYPES['MUL'], c)
         elif c == '/':
@@ -326,6 +336,25 @@ def expression():
         noeud.children.append(noeud_droit)
     return noeud
 
+# Fonction des gestions des instructions, pour le moment pas encore adapté à notre nouvelle structure
+def instruction():
+    if(check(TOKEN_TYPES['Point_virgule'])) :
+        return Node(NODES_TYPES["NODE_Empty"],None)
+    elif(check(TOKEN_TYPES['OPEN_ACCOLADE'])):
+        N = Node(NODES_TYPES["NODE_Block"],None)
+        while(not check(TOKEN_TYPES['CLOSE_ACCOLADE'])):
+            N.children.append(instruction())
+        return N
+    elif(check(TOKEN_TYPES['DEBUG'])):
+        N = expression()
+        accept(TOKEN_TYPES['Point_virgule'])
+        return Node(NODES_TYPES["NODE_Debug"],None)
+    else: # le cas d'une expression suivit d'un point virgule
+        N = expression()
+        accept(TOKEN_TYPES['Point_virgule'])
+        return Node(NODES_TYPES["Node_Drop"],N)
+
+
 # def Expression(Prio_min): #Parseur de Brat, gestions des associativités et des priorités
 #     N = prefix()
 #     if(tokenG.type == 'EOF'):
@@ -363,6 +392,7 @@ def expression():
 #         elif N.value == '+':
 #             print("add")
 #     N.affiche()
+
 
 def AnaSyn():
     return expression()  
