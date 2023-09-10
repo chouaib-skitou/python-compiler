@@ -31,7 +31,7 @@ NODES_TYPES = {
     'NODE_IDENTIFIER': 'NODE_IDENTIFIER',
     'NODE_CONSTANT': 'NODE_CONSTANT',
     'NODE_MINUS_UNARY': 'NODE_MINUS_UNARY',
-    'NODE_NOT': 'NODE_NOT',
+    'UNAIRE': '!',
     'BINAIRE': '-',
     'BINAIRE': '+',
     'BINAIRE' : '*',
@@ -71,9 +71,9 @@ MOTS_CLES = {
 
 class ValOpe:
     def __init__(self, nde, priority, AaD):
-        self.nde = nde
-        self.priority =priority
-        self.AaD = AaD
+        self.nde = nde #type du noeud
+        self.priority =priority #priorité de l'opération
+        self.AaD = AaD # si l'opération est associative à droite, la valeur est de 1
 
 # Table des Opérateurs avec les priorités
 OPERATORS = {
@@ -129,13 +129,15 @@ class Node:
     def genecode(self):
         if self.type == "NODE_CONSTANT":
             return [f"push {self.value}"]
+        elif self.type == "NODE_IDENTIFIER":
+            return [f"push {self.value}"]
         elif self.type == "UNAIRE":
             if self.valeur == "!":
-                # À compléter pour l'opérateur unaire !
-                pass
+                genecode_enfant0 = self.children[0].genecode()
+                return genecode_enfant0 + [f"not"]
         elif self.type == "BINAIRE":
-            instructions_gauche = self.children[0].genecode()
-            instructions_droite = self.children[1].genecode()
+            genecode_enfant0 = self.children[0].genecode()
+            genecode_enfant1 = self.children[1].genecode()
             if self.value == "+":
                 operation = "ADD"
             elif self.value == "-":
@@ -144,7 +146,13 @@ class Node:
                 operation = "MUL"
             elif self.value == "/":
                 operation = "DIV"
-            return instructions_gauche + instructions_droite + [f"push {operation}"]
+            return genecode_enfant0 + genecode_enfant1 + [f"push {operation}"]
+        elif self.type == "Node_Debug":
+            genecode_enfant = self.children[0].genecode()
+            return genecode_enfant + [f"push dbg"]
+        elif self.type == "Node_Drop":
+            genecode_enfant = self.children[0].genecode()
+            return genecode_enfant + [f"drop 1"]
         else:
             self.affiche()
             raise ValueError("Type de nœud inconnu")
@@ -227,6 +235,12 @@ def AnaLex(chaine):
             tokenG = Token(TOKEN_TYPES['OPEN_PAREN'], c)
         elif c == ')':
             tokenG = Token(TOKEN_TYPES['CLOSE_PAREN'], c)
+        elif c == '{':
+            tokenG = Token(TOKEN_TYPES['OPEN_ACCOLADE'], c)
+        elif c == '}':
+            tokenG = Token(TOKEN_TYPES['CLOSE_ACCOLADE'], c)
+        elif c == 'dbg':
+            tokenG = Token(TOKEN_TYPES['DEBUG'], c)
         elif c.isalnum():
             identifier_value = c
             position += 1
@@ -257,7 +271,7 @@ def next():
         tokenG = Token_tab[positionToken_tab]
         last = Token_tab[positionToken_tab - 1]
     positionToken_tab = positionToken_tab + 1
-    tokenG.affiche()
+    tokenG.affiche() #affichage du token en cours
 
 
 def check(token_type):
@@ -306,7 +320,9 @@ def prefix():
 
     if(check(TOKEN_TYPES['NOT'])) :
         N = prefix()
-        return Node(NODES_TYPES["NODE_NOT"],N)
+        L = Node(NODES_TYPES["UNAIRE"],None)
+        L.children.append(N)
+        return L
 
     elif(check(TOKEN_TYPES['PLUS'])) :
         N = prefix()
@@ -399,15 +415,17 @@ def AnaSyn():
 
 # Main program
 def main():
-    with open('test_1.txt', 'r') as file:
+    with open('test_1.txt', 'r') as file: # ouverture du fichier
         text = file.read()
-        AnaLex(text)
-        next()
+        AnaLex(text) #initialisation de l'analyse Lexicale
+        next() #Appel à la fonction next
         while(tokenG.type != "EOF"):
-            A = AnaSyn()
+            A = AnaSyn() # Analyse Synthaxique
+            # Affichage de l'arbre
             A.affiche()
-            assembleur = A.genecode()
+            assembleur = A.genecode() 
             for instruction in assembleur :
+                # Affichage du code
                 print(instruction)
 
 
