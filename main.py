@@ -368,7 +368,9 @@ def instruction():
     else: # le cas d'une expression suivit d'un point virgule
         N = expression()
         accept(TOKEN_TYPES['Point_virgule'])
-        return Node(NODES_TYPES["Node_Drop"],N)
+        L = Node(NODES_TYPES["Node_Drop"],None)
+        L.children.append(N)
+        return L
 
 
 # def Expression(Prio_min): #Parseur de Brat, gestions des associativités et des priorités
@@ -411,7 +413,7 @@ def instruction():
 
 
 def AnaSyn():
-    return expression()  
+    return instruction() #expression()  
 
 # Main program
 def main():
