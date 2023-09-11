@@ -37,10 +37,17 @@ NODES_TYPES = {
     'BINAIRE' : '*',
     'BINAIRE' : '/',
     'BINAIRE' : '%',
+    # Pour les instructions
     'Node_Empty' : 'Node_Empty',
     'Node_Block' : 'Node_Block',
     'Node_Debug' : 'Node_Debug',
     'Node_Drop' : 'Node_Drop',
+    #Pour les variables
+    'Node_Seq' : 'Node_Seq',
+    'Node_Decla' : 'Node_Decla',
+    'Node_Ref' : 'Node_Ref',
+    'Node_Affectation' : 'Node_Affectation',
+
 
 }
 MOTS_CLES = {
@@ -69,12 +76,6 @@ MOTS_CLES = {
     'signed': 'signed',
 }
 
-class ValOpe:
-    def __init__(self, nde, priority, AaD):
-        self.nde = nde #type du noeud
-        self.priority =priority #priorité de l'opération
-        self.AaD = AaD # si l'opération est associative à droite, la valeur est de 1
-
 # Table des Opérateurs avec les priorités
 OPERATORS = {
     TOKEN_TYPES['PLUS']: ValOpe('BINAIRE',6,0),
@@ -91,6 +92,24 @@ OPERATORS = {
     TOKEN_TYPES['LESS_THAN']: ValOpe('NODE_LESS_THAN',5,0),
 
 }
+
+#Table des symboles, forme (nom de variable : Symbole de la variable)
+TAB_SYMBOLE = dict()
+
+class Symbole:
+    def __init__(self, nom,type,position,nVar):
+        self.nom = nom
+        self.type = type
+        self.position = position
+        self.nVar = nVar
+
+
+class ValOpe:
+    def __init__(self, nde, priority, AaD):
+        self.nde = nde #type du noeud
+        self.priority =priority #priorité de l'opération
+        self.AaD = AaD # si l'opération est associative à droite, la valeur est de 1
+
 
 class Token:
     def __init__(self, type, value):
@@ -371,6 +390,26 @@ def instruction():
         L = Node(NODES_TYPES["Node_Drop"],None)
         L.children.append(N)
         return L
+
+
+# Fonction pour les variables
+def Declare(nom):
+    global TAB_SYMBOLE
+    for element in TAB_SYMBOLE.keys():
+        if(key == nom):
+            raise Exception("Token invalid !!!")
+        if(e.N == " "):
+            break
+        S = SYMBOLE.update()
+        T.append(nom,S)
+        return S
+
+
+def Chercher():
+for (e in T):
+    if(e.N == nom):
+        return e.N
+    raise Exception("Token invalid !!!")
 
 
 # def Expression(Prio_min): #Parseur de Brat, gestions des associativités et des priorités
