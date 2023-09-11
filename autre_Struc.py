@@ -29,31 +29,6 @@ class Noeud:
         for enfant in self.enfants:
             enfant.afficher(niveau + 1)
 
-    def genecode(self):
-        if self.type == "CONSTANTE":
-            return [f"push {self.valeur}"]
-        elif self.type == "MOINS_UNAIRE":
-            codeOperation = self.enfants[0].genecode()
-            return ["push 0"] + codeOperation 
-        elif self.type == "NOT":
-            return ["push 0"]
-        elif self.type == "IDENTIFIER":
-            pass
-        elif self.type == "BINAIRE":
-            instructions_gauche = self.enfants[0].genecode()
-            instructions_droite = self.enfants[1].genecode()
-            if self.valeur == "+":
-                operation = "ADD"
-            elif self.valeur == "-":
-                operation = "SUB"
-            elif self.valeur == "*":
-                operation = "MUL"
-            elif self.valeur == "/":
-                operation = "DIV"
-            return instructions_gauche + instructions_droite + [f"push {operation}"]
-        else:
-            # raise ValueError("Type de nœud inconnu")
-            pass
 
 
 listeToken = []
@@ -85,7 +60,7 @@ def check(type_):
 
 def accept(type_):
     if not check(type_):
-        raise ValueError("Erreur Fatal")
+        raise ValueError("Erreur Fatal", type_, token.type_)
 
 
 def next():
@@ -153,49 +128,44 @@ def analyseLexicale():
         listeToken.append(Token("EOF", "EOF"))
 
 
-def atome(tokens):
-    t = tokens.pop(0)
-    if t.type_ == "CONSTANTE":
-        return Noeud("CONSTANTE", t.valeur)
-    elif t.type_ == "IDENTIFIER":
-        return Noeud("IDENTIFIER", t.valeur)
-    elif t.type_ == "PARENTHG":
-        expr = expression(tokens)
-        if tokens.pop(0).type_ != "PARENTHD":
-            raise SyntaxError("Parenthèse droite attendue")
-        return expr
+def atome():
+    if check("CONSTANTE"):
+        return Noeud("CONSTANTE", last.valeur)
+    elif check("IDENTIFIER"):
+        return Noeud("IDENTIFIER", last.valeur)
+    elif check("PARENTHG"): 
+        N = expression()
+        accept("PARENTHD")
+        return N
     else:
-        raise SyntaxError(f"Atome inattendu: {t.type_}")
-
-0
-def prefixe(tokens):
-    if tokens[0].type_ == "PEXCLAMATION":
-        t = tokens.pop(0)
-        noeud = Noeud("NOT", t.valeur)
-        noeud.ajouter_enfant(atome(tokens))
-        return noeud
-    elif tokens[0].type_ == "MOINS":
-        t = tokens.pop(0)
-        noeud = Noeud("MOINS_UNAIRE", t.valeur)
-        noeud.ajouter_enfant(atome(tokens))
-        return noeud
-    elif tokens[0].type_ == "PLUS":
-        tokens.pop(0)
-        return atome(tokens)
-    return atome(tokens)
+        raise SyntaxError(f"Atome inattendu: {last.type_}")
 
 
-def expression(tokens):
-    noeud = prefixe(tokens)
-    while tokens and tokens[0].type_ in {"PLUS", "MOINS", "MULT", "DIV"}:
-        op = tokens.pop(0)
-        noeud_droit = prefixe(tokens)
+def prefixe():
+    if check("MOINS"):
+        N = prefixe()
+        return Noeud("N_MOINS_UNAIRE", N)
+    elif check("PEXCLAMATION"):
+        N = prefixe()
+        return Noeud("N_NOT", N)
+    elif check("PLUS"):
+        N = prefixe()
+        return N
+    else:
+        N = atome()
+        return N
+
+
+def expression():
+    noeud = prefixe()
+    while token.type_ in {"PLUS", "MOINS", "MULT", "DIV"}:
+        op = token
+        noeud_droit = prefixe()
         noeud_gauche = noeud
         noeud = Noeud("BINAIRE", op.valeur)
         noeud.ajouter_enfant(noeud_gauche)
         noeud.ajouter_enfant(noeud_droit)
     return noeud
-
 
 def instruction():
     if check("POINTVIRGULE"):
@@ -206,13 +176,38 @@ def instruction():
             N.ajouter_enfant(instruction())
         return N
     else:
-        N = expression(listeToken);
+        N = expression()
         accept("POINTVIRGULE")
-        return Noeud("NOEUD_DROP", N)
+        return N
     
 def analyseSyntaxique():
     return instruction()
 
+def genecode(self):
+    if self.type == "CONSTANTE":
+        return [f"push {self.valeur}"]
+    elif self.type == "MOINS_UNAIRE":
+        codeOperation = self.enfants[0].genecode()
+        return ["push 0"] + codeOperation 
+    elif self.type == "NOT":
+        return ["push 0"]
+    elif self.type == "IDENTIFIER":
+        pass
+    elif self.type == "BINAIRE":
+        instructions_gauche = self.enfants[0].genecode()
+        instructions_droite = self.enfants[1].genecode()
+        if self.valeur == "+":
+            operation = "ADD"
+        elif self.valeur == "-":
+            operation = "SUB"
+        elif self.valeur == "*":
+            operation = "MUL"
+        elif self.valeur == "/":
+            operation = "DIV"
+        return instructions_gauche + instructions_droite + [f"push {operation}"]
+    else:
+        raise ValueError("Type de nœud inconnu")
+    pass
 # def analyseSemantique(Noeud):
 #    nbVar, nbVal = 0
 #    if(Noeud.type == NdDeclare):
@@ -235,17 +230,16 @@ positionListeToken = 0
 token = Token("", "")
 last = Token("", "")
 analyseLexicale()
-
-#print("Liste des tokens :")
-#for x in listeToken:
-#    print(x.type_ + " " + x.valeur)
-#print()
-#print("Arbre de token :")
-#racine = expression(listeToken)
-#racine.afficher()
-#print()
+next()
+print("Liste des tokens :")
+for x in listeToken:
+    print(x.type_ + " " + x.valeur)
+print()
+print("Arbre de token :")
+A = analyseSyntaxique()
+A.afficher()
 #print("Generation du code :")
 #assembleur = racine.genecode()
 #for instructions in assembleur:
     #print(instructions)
-analyseSyntaxique()
+#analyseSyntaxique()
