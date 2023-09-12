@@ -76,22 +76,7 @@ MOTS_CLES = {
     'signed': 'signed',
 }
 
-# Table des Opérateurs avec les priorités
-OPERATORS = {
-    TOKEN_TYPES['PLUS']: ValOpe('BINAIRE',6,0),
-    TOKEN_TYPES['MINUS']: ValOpe('NODE_MINUS_BINAIRE',6,0),
-    TOKEN_TYPES['MUL']: ValOpe('NODE_MUL',7,0),
-    TOKEN_TYPES['DIV']: ValOpe('NODE_DIV',7,0),
-    TOKEN_TYPES['MOD']: ValOpe('NODE_MOD',7,0),
-    TOKEN_TYPES['AFFECTATION']: ValOpe('NODE_AFFECTATION',1,1),
-    TOKEN_TYPES['OR']: ValOpe('NODE_OR',2,0),
-    TOKEN_TYPES['AND']: ValOpe('NODE_AND',3,0),
-    TOKEN_TYPES['EQUAL']: ValOpe('NODE_EQUAL',4,0),
-    TOKEN_TYPES['NOT_EQUAL']: ValOpe('NODE_NOT_EQUAL',4,0),
-    TOKEN_TYPES['GREATER_THAN']: ValOpe('NODE_GREATER_THAN',5,0),
-    TOKEN_TYPES['LESS_THAN']: ValOpe('NODE_LESS_THAN',5,0),
 
-}
 
 #Table des symboles, forme (nom de variable : Symbole de la variable)
 TAB_SYMBOLE = dict()
@@ -112,6 +97,22 @@ class ValOpe:
         self.priority =priority #priorité de l'opération
         self.AaD = AaD # si l'opération est associative à droite, la valeur est de 1
 
+# Table des Opérateurs avec les priorités
+OPERATORS = {
+    TOKEN_TYPES['PLUS']: ValOpe('BINAIRE',6,0),
+    TOKEN_TYPES['MINUS']: ValOpe('NODE_MINUS_BINAIRE',6,0),
+    TOKEN_TYPES['MUL']: ValOpe('NODE_MUL',7,0),
+    TOKEN_TYPES['DIV']: ValOpe('NODE_DIV',7,0),
+    TOKEN_TYPES['MOD']: ValOpe('NODE_MOD',7,0),
+    TOKEN_TYPES['AFFECTATION']: ValOpe('NODE_AFFECTATION',1,1),
+    TOKEN_TYPES['OR']: ValOpe('NODE_OR',2,0),
+    TOKEN_TYPES['AND']: ValOpe('NODE_AND',3,0),
+    TOKEN_TYPES['EQUAL']: ValOpe('NODE_EQUAL',4,0),
+    TOKEN_TYPES['NOT_EQUAL']: ValOpe('NODE_NOT_EQUAL',4,0),
+    TOKEN_TYPES['GREATER_THAN']: ValOpe('NODE_GREATER_THAN',5,0),
+    TOKEN_TYPES['LESS_THAN']: ValOpe('NODE_LESS_THAN',5,0),
+
+}
 
 class Token:
     def __init__(self, type, value):
@@ -417,7 +418,7 @@ def Declare(nom):
 
 def Chercher():
     global TAB_SYMBOLE
-    for element in TAB_SYMBOLE.keys():
+    for element in TAB_SYMBOLE.keys(): # si la variable est dans la pile, on retourne sont symbole
         if(element == nom):
             return TAB_SYMBOLE[element]
 
