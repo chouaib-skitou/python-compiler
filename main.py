@@ -99,10 +99,12 @@ TAB_SYMBOLE = dict()
 class Symbole:
     def __init__(self, nom,type,position,nVar):
         self.nom = nom
-        self.type = type
+        self.type = type # Les seuls types existant sont Fonction et VarLoc
         self.position = position
         self.nVar = nVar
 
+    def affiche(self):
+        print("SYMBOLE : nom : " + self.nom+" type : "+self.type+" position : "+self.position+" nVar : "+self.nVar)
 
 class ValOpe:
     def __init__(self, nde, priority, AaD):
@@ -392,24 +394,35 @@ def instruction():
         return L
 
 
+def Begin():
+    TAB_SYMBOLE.append(" ",None) #Ajout d'un élement dans la pile pour annoncer le début d'un bloc
+
+def End():
+    for element in TAB_SYMBOLE.keys():
+        while(element != " "): #suppression des élements de la pile jusqu'au bloc suivant
+            TAB_SYMBOLE.pop(element)
+
 # Fonction pour les variables
 def Declare(nom):
     global TAB_SYMBOLE
     for element in TAB_SYMBOLE.keys():
-        if(key == nom):
+        if(element == nom): # si le nom de la var est déjà dans la pile on retourne une erreur
             raise Exception("Token invalid !!!")
-        if(e.N == " "):
+        if(element == " "): # si c'est le début d'un bloc, on sort de la fonction
             break
-        S = SYMBOLE.update()
-        T.append(nom,S)
+        S = Symbole(nom,"VarLoc",None,None) # sinon, on crée un symbole et on remplie la pile
+        TAB_SYMBOLE.append(nom,S) #Ajout du couple (nom,Symbole) dans la pile
         return S
 
 
 def Chercher():
-for (e in T):
-    if(e.N == nom):
-        return e.N
-    raise Exception("Token invalid !!!")
+    global TAB_SYMBOLE
+    for element in TAB_SYMBOLE.keys():
+        if(element == nom):
+            return TAB_SYMBOLE[element]
+
+
+
 
 
 # def Expression(Prio_min): #Parseur de Brat, gestions des associativités et des priorités
