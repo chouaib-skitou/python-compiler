@@ -28,9 +28,9 @@ TOKEN_TYPES = {
 
 }
 NODES_TYPES = {
-    'NODE_IDENTIFIER': 'NODE_IDENTIFIER',
-    'NODE_CONSTANT': 'NODE_CONSTANT',
-    'NODE_MINUS_UNARY': 'NODE_MINUS_UNARY',
+    'Node_IDENTIFIER': 'Node_IDENTIFIER',
+    'Node_CONSTANT': 'Node_CONSTANT',
+    'Node_MINUS_UNARY': 'Node_MINUS_UNARY',
     'UNAIRE': '!',
     'BINAIRE': '-',
     'BINAIRE': '+',
@@ -100,17 +100,17 @@ class ValOpe:
 # Table des Opérateurs avec les priorités
 OPERATORS = {
     TOKEN_TYPES['PLUS']: ValOpe('BINAIRE',6,0),
-    TOKEN_TYPES['MINUS']: ValOpe('NODE_MINUS_BINAIRE',6,0),
-    TOKEN_TYPES['MUL']: ValOpe('NODE_MUL',7,0),
-    TOKEN_TYPES['DIV']: ValOpe('NODE_DIV',7,0),
-    TOKEN_TYPES['MOD']: ValOpe('NODE_MOD',7,0),
-    TOKEN_TYPES['AFFECTATION']: ValOpe('NODE_AFFECTATION',1,1),
-    TOKEN_TYPES['OR']: ValOpe('NODE_OR',2,0),
-    TOKEN_TYPES['AND']: ValOpe('NODE_AND',3,0),
-    TOKEN_TYPES['EQUAL']: ValOpe('NODE_EQUAL',4,0),
-    TOKEN_TYPES['NOT_EQUAL']: ValOpe('NODE_NOT_EQUAL',4,0),
-    TOKEN_TYPES['GREATER_THAN']: ValOpe('NODE_GREATER_THAN',5,0),
-    TOKEN_TYPES['LESS_THAN']: ValOpe('NODE_LESS_THAN',5,0),
+    TOKEN_TYPES['MINUS']: ValOpe('Node_MINUS_BINAIRE',6,0),
+    TOKEN_TYPES['MUL']: ValOpe('Node_MUL',7,0),
+    TOKEN_TYPES['DIV']: ValOpe('Node_DIV',7,0),
+    TOKEN_TYPES['MOD']: ValOpe('Node_MOD',7,0),
+    TOKEN_TYPES['AFFECTATION']: ValOpe('Node_AFFECTATION',1,1),
+    TOKEN_TYPES['OR']: ValOpe('Node_OR',2,0),
+    TOKEN_TYPES['AND']: ValOpe('Node_AND',3,0),
+    TOKEN_TYPES['EQUAL']: ValOpe('Node_EQUAL',4,0),
+    TOKEN_TYPES['NOT_EQUAL']: ValOpe('Node_NOT_EQUAL',4,0),
+    TOKEN_TYPES['GREATER_THAN']: ValOpe('Node_GREATER_THAN',5,0),
+    TOKEN_TYPES['LESS_THAN']: ValOpe('Node_LESS_THAN',5,0),
 
 }
 
@@ -130,10 +130,12 @@ class Token:
 
     
 class Node:
-    def __init__(self, type, value):
+    symbole = None #par défaut on met symbole à None, car il ne concerne que les Noeud Ref
+    def __init__(self, type, value,symbole):
         self.type = type
         self.value = value
         self.children = []
+        self.symbole = symbole # Ajout de symbole dans les noeuds
     
     def get_type(self):
         return self.type
@@ -149,9 +151,9 @@ class Node:
         for child in self.children:
             child.affiche()
     def genecode(self):
-        if self.type == "NODE_CONSTANT":
+        if self.type == "Node_CONSTANT":
             return [f"push {self.value}"]
-        elif self.type == "NODE_IDENTIFIER":
+        elif self.type == "Node_IDENTIFIER":
             return [f"push {self.value}"]
         elif self.type == "UNAIRE":
             if self.valeur == "!":
@@ -175,6 +177,11 @@ class Node:
         elif self.type == "Node_Drop":
             genecode_enfant = self.children[0].genecode()
             return genecode_enfant + [f"drop 1"]
+        elif self.type == "Node_Decla":
+            break
+        elif self.type == "Node_Block" or self.type == "Node_Seq" :
+            for child in self.children:
+                child.genecode()
         else:
             self.affiche()
             raise ValueError("Type de nœud inconnu")
@@ -309,9 +316,12 @@ def accept(token_type):
 
 def Atome():
     if(check(TOKEN_TYPES['CONSTANT'])) :
-        return Node(NODES_TYPES["NODE_CONSTANT"],last.value)
+        return Node(NODES_TYPES["Node_CONSTANT"],last.value)
+    # elif(check(TOKEN_TYPES['IDENTIFIER'])):
+    #     return Node(NODES_TYPES["Node_IDENTIFIER"],last.value)
+    #Gestion des variables
     elif(check(TOKEN_TYPES['IDENTIFIER'])):
-        return Node(NODES_TYPES["NODE_IDENTIFIER"],last.value)
+        return Node(NODES_TYPES["Node_Ref"],last.value)
     elif(check(TOKEN_TYPES['OPEN_PAREN'])):
         N = expression()
         while(last.type != TOKEN_TYPES['CLOSE_PAREN']):
@@ -324,11 +334,11 @@ def Atome():
 # def prefix():
 #     if(check(TOKEN_TYPES['MINUS'])) :
 #         N = prefix() 
-#         return Node(NODES_TYPES["NODE_MINUS_UNAIRY"],N)
+#         return Node(NODES_TYPES["Node_MINUS_UNAIRY"],N)
 
 #     elif(check(TOKEN_TYPES['NOT'])) :
 #         N = prefix()
-#         return Node(NODES_TYPES["NODE_NOT"],N)
+#         return Node(NODES_TYPES["Node_NOT"],N)
 
 #     elif(check(TOKEN_TYPES['PLUS'])) :
 #         N = prefix()
@@ -376,17 +386,26 @@ def expression():
 
 # Fonction des gestions des instructions, pour le moment pas encore adapté à notre nouvelle structure
 def instruction():
+    c = ','
     if(check(TOKEN_TYPES['Point_virgule'])) :
-        return Node(NODES_TYPES["NODE_Empty"],None)
+        return Node(NODES_TYPES["Node_Empty"],None)
     elif(check(TOKEN_TYPES['OPEN_ACCOLADE'])):
-        N = Node(NODES_TYPES["NODE_Block"],None)
+        N = Node(NODES_TYPES["Node_Block"],None)
         while(not check(TOKEN_TYPES['CLOSE_ACCOLADE'])):
             N.children.append(instruction())
         return N
     elif(check(TOKEN_TYPES['DEBUG'])):
         N = expression()
         accept(TOKEN_TYPES['Point_virgule'])
-        return Node(NODES_TYPES["NODE_Debug"],None)
+        return Node(NODES_TYPES["Node_Debug"],None)
+    #Gestion des variables
+    elif(check(TOKEN_TYPES['IDENTIFIER'])):
+        N = Node(NODES_TYPES['Node_Seq'],None)
+        while(c == ','):
+            accept(TOKEN_TYPES['IDENTIFIER'])
+            N.children.append(Node(NODES_TYPES['Node_Decla'],last.value))
+        accept(TOKEN_TYPES['Point_virgule'])
+        return N
     else: # le cas d'une expression suivit d'un point virgule
         N = expression()
         accept(TOKEN_TYPES['Point_virgule'])
@@ -421,7 +440,25 @@ def Chercher():
     for element in TAB_SYMBOLE.keys(): # si la variable est dans la pile, on retourne sont symbole
         if(element == nom):
             return TAB_SYMBOLE[element]
-
+nbVar = 0
+def AnaSem(N):
+    global nbVar
+    if(N.type == 'Node_Block'):
+        Begin()
+        for child in N.children:
+            AnaSem(child)
+        End()
+    elif(N.type == 'Node_Decla'):
+        S = Declare(N.valeur)
+        S.position = nbVar
+        nbVar += 1
+        S.type = "VarLoc"
+    elif(N.type == 'Node_Ref'):
+        S = Chercher(N.valeur)
+        N.symbole = S
+    else:
+        for e in N.children:
+            AnaSem(e)
 
 
 
@@ -444,9 +481,9 @@ def Chercher():
 #     return N
         
 # def  Genecode(N):
-#     if N.type == 'NODE_CONSTANT' :
+#     if N.type == 'Node_CONSTANT' :
 #         print("push",N.value)
-#     elif N.type == 'NODE_NOT' :
+#     elif N.type == 'Node_NOT' :
 #         Gencode(N.children[0])
 #         print("not")
 #     elif N.type == "BINAIRE" :
