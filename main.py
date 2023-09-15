@@ -177,11 +177,21 @@ class Node:
         elif self.type == "Node_Drop":
             genecode_enfant = self.children[0].genecode()
             return genecode_enfant + [f"drop 1"]
-        elif self.type == "Node_Decla":
-            break
-        elif self.type == "Node_Block" or self.type == "Node_Seq" :
+        elif self.type == "Node_Decla": #gestion noeud de déclaration
+            pass
+        elif self.type == "Node_Block" or self.type == "Node_Seq" : #gestions des noeuds de Block et de Séquence
             for child in self.children:
                 child.genecode()
+        elif self.type == "Node_Ref" : #gestions des noeuds de variables
+            if(self.symbole.type == "VarLoc"):
+                print("get "+ self.symbole.position)
+        elif self.type == "Node_Affectation" :
+            genecode_enfant1 = self.children[1].genecode()
+            print("dup")
+            if(self.children[0].type != "Node_Ref"):
+                raise Exception("Il ne s'agit pas d'une variable")
+            if(self.children[0].type == "VarLoc"):
+                print("set "+self.children[0].symbole.position)
         else:
             self.affiche()
             raise ValueError("Type de nœud inconnu")
@@ -316,7 +326,7 @@ def accept(token_type):
 
 def Atome():
     if(check(TOKEN_TYPES['CONSTANT'])) :
-        return Node(NODES_TYPES["Node_CONSTANT"],last.value)
+        return Node(NODES_TYPES["Node_CONSTANT"],last.value,None)
     # elif(check(TOKEN_TYPES['IDENTIFIER'])):
     #     return Node(NODES_TYPES["Node_IDENTIFIER"],last.value)
     #Gestion des variables
@@ -379,7 +389,7 @@ def expression():
         op = tokenG
         noeud_droit = prefix()
         noeud_gauche = noeud
-        noeud = Node("BINAIRE", op.value)
+        noeud = Node("BINAIRE", op.value,None)
         noeud.children.append(noeud_gauche)
         noeud.children.append(noeud_droit)
     return noeud
@@ -409,7 +419,7 @@ def instruction():
     else: # le cas d'une expression suivit d'un point virgule
         N = expression()
         accept(TOKEN_TYPES['Point_virgule'])
-        L = Node(NODES_TYPES["Node_Drop"],None)
+        L = Node(NODES_TYPES["Node_Drop"],None,None)
         L.children.append(N)
         return L
 
