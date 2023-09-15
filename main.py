@@ -310,7 +310,7 @@ def next():
         tokenG = Token_tab[positionToken_tab]
         last = Token_tab[positionToken_tab - 1]
     positionToken_tab = positionToken_tab + 1
-    tokenG.affiche() #affichage du token en cours
+    #tokenG.affiche() #affichage du token en cours
 
 
 def check(token_type):
@@ -331,7 +331,7 @@ def Atome():
     #     return Node(NODES_TYPES["Node_IDENTIFIER"],last.value)
     #Gestion des variables
     elif(check(TOKEN_TYPES['IDENTIFIER'])):
-        return Node(NODES_TYPES["Node_Ref"],last.value)
+        return Node(NODES_TYPES["Node_Ref"],last.value,None)
     elif(check(TOKEN_TYPES['OPEN_PAREN'])):
         N = expression()
         while(last.type != TOKEN_TYPES['CLOSE_PAREN']):
@@ -398,19 +398,19 @@ def expression():
 def instruction():
     c = ','
     if(check(TOKEN_TYPES['Point_virgule'])) :
-        return Node(NODES_TYPES["Node_Empty"],None)
+        return Node(NODES_TYPES["Node_Empty"],None,None)
     elif(check(TOKEN_TYPES['OPEN_ACCOLADE'])):
-        N = Node(NODES_TYPES["Node_Block"],None)
+        N = Node(NODES_TYPES["Node_Block"],None,None)
         while(not check(TOKEN_TYPES['CLOSE_ACCOLADE'])):
             N.children.append(instruction())
         return N
     elif(check(TOKEN_TYPES['DEBUG'])):
         N = expression()
         accept(TOKEN_TYPES['Point_virgule'])
-        return Node(NODES_TYPES["Node_Debug"],None)
+        return Node(NODES_TYPES["Node_Debug"],None,None)
     #Gestion des variables
     elif(check(TOKEN_TYPES['IDENTIFIER'])):
-        N = Node(NODES_TYPES['Node_Seq'],None)
+        N = Node(NODES_TYPES['Node_Seq'],None,None)
         while(c == ','):
             accept(TOKEN_TYPES['IDENTIFIER'])
             N.children.append(Node(NODES_TYPES['Node_Decla'],last.value))
@@ -521,14 +521,17 @@ def main():
         text = file.read()
         AnaLex(text) #initialisation de l'analyse Lexicale
         next() #Appel à la fonction next
+        print(". start")
         while(tokenG.type != "EOF"):
             A = AnaSyn() # Analyse Synthaxique
             # Affichage de l'arbre
-            A.affiche()
+            #A.affiche()
             assembleur = A.genecode() 
+
             for instruction in assembleur :
                 # Affichage du code
-                print(instruction)
+                print("  ",instruction)
+        print("halt \n")
 
 
 if __name__ == '__main__':
