@@ -1,0 +1,11 @@
+.start
+    push 8
+    push 5
+    push 6
+    push 5
+    sub
+    mul
+    add
+dbg
+    drop 1
+halt

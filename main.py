@@ -92,25 +92,27 @@ class Symbole:
         print("SYMBOLE : nom : " + self.nom+" type : "+self.type+" position : "+self.position+" nVar : "+self.nVar)
 
 class ValOpe:
-    def __init__(self, nde, priority, AaD):
-        self.nde = nde #type du noeud
+    def __init__(self, ndeType,ndeVal,ndeSymb, priority, AaD):
+        self.ndeType = ndeType #type du noeud
+        self.ndeVal = ndeVal #valeur du noeud
+        self.ndeSymb = ndeSymb #symbole du noeud
         self.priority =priority #priorité de l'opération
         self.AaD = AaD # si l'opération est associative à droite, la valeur est de 1
 
 # Table des Opérateurs avec les priorités
 OPERATORS = {
-    TOKEN_TYPES['PLUS']: ValOpe('BINAIRE',6,0),
-    TOKEN_TYPES['MINUS']: ValOpe('Node_MINUS_BINAIRE',6,0),
-    TOKEN_TYPES['MUL']: ValOpe('Node_MUL',7,0),
-    TOKEN_TYPES['DIV']: ValOpe('Node_DIV',7,0),
-    TOKEN_TYPES['MOD']: ValOpe('Node_MOD',7,0),
-    TOKEN_TYPES['AFFECTATION']: ValOpe('Node_AFFECTATION',1,1),
-    TOKEN_TYPES['OR']: ValOpe('Node_OR',2,0),
-    TOKEN_TYPES['AND']: ValOpe('Node_AND',3,0),
-    TOKEN_TYPES['EQUAL']: ValOpe('Node_EQUAL',4,0),
-    TOKEN_TYPES['NOT_EQUAL']: ValOpe('Node_NOT_EQUAL',4,0),
-    TOKEN_TYPES['GREATER_THAN']: ValOpe('Node_GREATER_THAN',5,0),
-    TOKEN_TYPES['LESS_THAN']: ValOpe('Node_LESS_THAN',5,0),
+    TOKEN_TYPES['PLUS']: ValOpe('BINAIRE','+',None,6,0),
+    TOKEN_TYPES['MINUS']: ValOpe('BINAIRE','-',None,6,0),
+    TOKEN_TYPES['MUL']: ValOpe('BINAIRE','*',None,7,0),
+    TOKEN_TYPES['DIV']: ValOpe('BINAIRE','/',None,7,0),
+    TOKEN_TYPES['MOD']: ValOpe('BINAIRE','%',None,7,0),
+    TOKEN_TYPES['AFFECTATION']: ValOpe('Node_AFFECTATION','=',None,1,1),
+    # TOKEN_TYPES['OR']: ValOpe('Node_OR',2,0),
+    # TOKEN_TYPES['AND']: ValOpe('Node_AND',3,0),
+    # TOKEN_TYPES['EQUAL']: ValOpe('Node_EQUAL',4,0),
+    # TOKEN_TYPES['NOT_EQUAL']: ValOpe('Node_NOT_EQUAL',4,0),
+    # TOKEN_TYPES['GREATER_THAN']: ValOpe('Node_GREATER_THAN',5,0),
+    # TOKEN_TYPES['LESS_THAN']: ValOpe('Node_LESS_THAN',5,0),
 
 }
 
@@ -162,15 +164,16 @@ class Node:
         elif self.type == "BINAIRE":
             genecode_enfant0 = self.children[0].genecode()
             genecode_enfant1 = self.children[1].genecode()
+            operation = ""
             if self.value == "+":
-                operation = "ADD"
+                operation = "add"
             elif self.value == "-":
-                operation = "SUB"
+                operation = "sub"
             elif self.value == "*":
-                operation = "MUL"
+                operation = "mul"
             elif self.value == "/":
-                operation = "DIV"
-            return genecode_enfant0 + genecode_enfant1 + [f"push {operation}"]
+                operation = "div"
+            return genecode_enfant0 + genecode_enfant1 + [f"{operation}"]
         elif self.type == "Node_Debug":
             genecode_enfant = self.children[0].genecode()
             return genecode_enfant + [f"push dbg"]
@@ -310,7 +313,7 @@ def next():
         tokenG = Token_tab[positionToken_tab]
         last = Token_tab[positionToken_tab - 1]
     positionToken_tab = positionToken_tab + 1
-    #tokenG.affiche() #affichage du token en cours
+    tokenG.affiche() #affichage du token en cours
 
 
 def check(token_type):
@@ -333,7 +336,7 @@ def Atome():
     elif(check(TOKEN_TYPES['IDENTIFIER'])):
         return Node(NODES_TYPES["Node_Ref"],last.value,None)
     elif(check(TOKEN_TYPES['OPEN_PAREN'])):
-        N = expression()
+        N = Expression(0)
         while(last.type != TOKEN_TYPES['CLOSE_PAREN']):
             next()
         return N
@@ -382,17 +385,6 @@ def prefix():
         N = Atome()
         return N
 
-# Fonction pour analyser les expressions
-def expression():
-    noeud = prefix()
-    while tokenG.type in OPERATORS:
-        op = tokenG
-        noeud_droit = prefix()
-        noeud_gauche = noeud
-        noeud = Node("BINAIRE", op.value,None)
-        noeud.children.append(noeud_gauche)
-        noeud.children.append(noeud_droit)
-    return noeud
 
 # Fonction des gestions des instructions, pour le moment pas encore adapté à notre nouvelle structure
 def instruction():
@@ -405,7 +397,7 @@ def instruction():
             N.children.append(instruction())
         return N
     elif(check(TOKEN_TYPES['DEBUG'])):
-        N = expression()
+        N = Expression(0)
         accept(TOKEN_TYPES['Point_virgule'])
         return Node(NODES_TYPES["Node_Debug"],None,None)
     #Gestion des variables
@@ -417,7 +409,7 @@ def instruction():
         accept(TOKEN_TYPES['Point_virgule'])
         return N
     else: # le cas d'une expression suivit d'un point virgule
-        N = expression()
+        N = Expression(0)
         accept(TOKEN_TYPES['Point_virgule'])
         L = Node(NODES_TYPES["Node_Drop"],None,None)
         L.children.append(N)
@@ -473,23 +465,48 @@ def AnaSem(N):
 
 
 
-# def Expression(Prio_min): #Parseur de Brat, gestions des associativités et des priorités
-#     N = prefix()
-#     if(tokenG.type == 'EOF'):
-#         return N
-#     while(OPERATORS[tokenG.type] in OPERATORS):
-#         Op = OPERATORS[tokenG.type]
-#         if(Op.priority <= Prio_min) :
+def Expression(Prio_min): #Parseur de Brat, gestions des associativités et des priorités
+    N = prefix()
+    if(tokenG.type == 'EOF'):
+        return N
+    while OPERATORS.get(tokenG.type) is not None:
+        Op = OPERATORS[tokenG.type]
+        if(Op.priority <= Prio_min) :
+            break
+        else:
+            next()
+            M = Expression(Op.priority - Op.AaD)
+            L = Node(Op.ndeType,Op.ndeVal,Op.ndeSymb)
+            L.children.append(N)
+            L.children.append(M)
+            N = L
+    return N
+
+# def expression(prioMin):
+#     N = prefixe()
+#     while OPERATORS.get(token.type) is not None:
+#         op = OPERATORS[token.type_]
+#         if op["Priorite"] <= prioMin:
 #             break
-#         else:
-#             next()
-#             M = Expression(Op.priority - Op.AaD)
-#             L = Node(Op.nde)
-#             L.children[0] = N
-#             L.children[1] = M
-#             N = L
+#         next()
+#         M = expression(op["Priorite"] - op["Aad"])
+#         noeud = Noeud(op["Noeud"], "")
+#         noeud.ajouter_enfant(N)
+#         noeud.ajouter_enfant(M)
+#         N = noeud
 #     return N
-        
+
+# # Fonction pour analyser les expressions
+# def expression():
+#     noeud = prefix()
+#     while tokenG.type in OPERATORS:
+#         op = tokenG
+#         noeud_droit = prefix()
+#         noeud_gauche = noeud
+#         noeud = Node("BINAIRE", op.value,None)
+#         noeud.children.append(noeud_gauche)
+#         noeud.children.append(noeud_droit)
+#     return noeud     
 # def  Genecode(N):
 #     if N.type == 'Node_CONSTANT' :
 #         print("push",N.value)
@@ -521,17 +538,25 @@ def main():
         text = file.read()
         AnaLex(text) #initialisation de l'analyse Lexicale
         next() #Appel à la fonction next
-        print(". start")
+        print(".start")
         while(tokenG.type != "EOF"):
             A = AnaSyn() # Analyse Synthaxique
             # Affichage de l'arbre
-            #A.affiche()
+            A.affiche()
+            AnaSem(A)
             assembleur = A.genecode() 
-
             for instruction in assembleur :
                 # Affichage du code
                 print("  ",instruction)
         print("halt \n")
+         # redirection of execution result inside a file.txt
+    with open('./msm/msm/result.txt', 'w') as file:
+        file.write(str(".start\n"))
+        for instruction in assembleur :
+            file.write('    '+str(instruction)+'\n')
+        file.write(str("    dbg\n"))
+        file.write(str("halt"))
+        file.close()
 
 
 if __name__ == '__main__':
