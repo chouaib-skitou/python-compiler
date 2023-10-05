@@ -78,8 +78,8 @@ MOTS_CLES = {
 
 
 
-#Table des symboles, forme (nom de variable : Symbole de la variable)
-TAB_SYMBOLE = dict()
+#Table des symboles, dans laquelle on mettra des tuples de la forme (nom de variable : Symbole de la variable)
+TAB_SYMBOLE = []
 
 class Symbole:
     def __init__(self, nom,type,position,nVar):
@@ -182,6 +182,8 @@ class Node:
             return genecode_enfant + [f"drop 1"]
         elif self.type == "Node_Decla": #gestion noeud de déclaration
             pass
+        elif self.type == "Node_Empty": #gestion noeud de déclaration
+            pass
         elif self.type == "Node_Block" or self.type == "Node_Seq" : #gestions des noeuds de Block et de Séquence
             for child in self.children:
                 child.genecode()
@@ -219,6 +221,8 @@ def AnaLex(chaine):
                 constant_value += chaine[position]
                 position += 1
             tokenG = Token(TOKEN_TYPES['CONSTANT'], constant_value)
+            position -= 1  # move back the position by 1 so as to not skip the next character
+
         elif c == '+':
             tokenG = Token(TOKEN_TYPES['PLUS'], c)
         elif c == '-':
@@ -296,9 +300,11 @@ def AnaLex(chaine):
         else:
             raise Exception("Le token est invalid")
         
+        #tokenG.affiche()
         position = position + 1
         global Token_tab
         Token_tab.append(tokenG)
+        
 
     Token_tab.append(Token("EOF",None))
 
@@ -330,8 +336,8 @@ def accept(token_type):
 def Atome():
     if(check(TOKEN_TYPES['CONSTANT'])) :
         return Node(NODES_TYPES["Node_CONSTANT"],last.value,None)
-    # elif(check(TOKEN_TYPES['IDENTIFIER'])):
-    #     return Node(NODES_TYPES["Node_IDENTIFIER"],last.value)
+    elif(tokenG.type in MOTS_CLES):
+        pass
     #Gestion des variables
     elif(check(TOKEN_TYPES['IDENTIFIER'])):
         return Node(NODES_TYPES["Node_Ref"],last.value,None)
@@ -341,7 +347,7 @@ def Atome():
             next()
         return N
     else :
-        raise Exception("Token invalid !!!")
+        raise Exception(f"Atome inattendu: {last.type}")
 
 
 # def prefix():
@@ -385,86 +391,6 @@ def prefix():
         N = Atome()
         return N
 
-
-# Fonction des gestions des instructions, pour le moment pas encore adapté à notre nouvelle structure
-def instruction():
-    c = ','
-    if(check(TOKEN_TYPES['Point_virgule'])) :
-        return Node(NODES_TYPES["Node_Empty"],None,None)
-    elif(check(TOKEN_TYPES['OPEN_ACCOLADE'])):
-        N = Node(NODES_TYPES["Node_Block"],None,None)
-        while(not check(TOKEN_TYPES['CLOSE_ACCOLADE'])):
-            N.children.append(instruction())
-        return N
-    elif(check(TOKEN_TYPES['DEBUG'])):
-        N = Expression(0)
-        accept(TOKEN_TYPES['Point_virgule'])
-        return Node(NODES_TYPES["Node_Debug"],None,None)
-    #Gestion des variables
-    elif(check(TOKEN_TYPES['IDENTIFIER'])):
-        N = Node(NODES_TYPES['Node_Seq'],None,None)
-        while(c == ','):
-            accept(TOKEN_TYPES['IDENTIFIER'])
-            N.children.append(Node(NODES_TYPES['Node_Decla'],last.value))
-        accept(TOKEN_TYPES['Point_virgule'])
-        return N
-    else: # le cas d'une expression suivit d'un point virgule
-        N = Expression(0)
-        accept(TOKEN_TYPES['Point_virgule'])
-        L = Node(NODES_TYPES["Node_Drop"],None,None)
-        L.children.append(N)
-        return L
-
-
-def Begin():
-    TAB_SYMBOLE.append(" ",None) #Ajout d'un élement dans la pile pour annoncer le début d'un bloc
-
-def End():
-    for element in TAB_SYMBOLE.keys():
-        while(element != " "): #suppression des élements de la pile jusqu'au bloc suivant
-            TAB_SYMBOLE.pop(element)
-
-# Fonction pour les variables
-def Declare(nom):
-    global TAB_SYMBOLE
-    for element in TAB_SYMBOLE.keys():
-        if(element == nom): # si le nom de la var est déjà dans la pile on retourne une erreur
-            raise Exception("Token invalid !!!")
-        if(element == " "): # si c'est le début d'un bloc, on sort de la fonction
-            break
-        S = Symbole(nom,"VarLoc",None,None) # sinon, on crée un symbole et on remplie la pile
-        TAB_SYMBOLE.append(nom,S) #Ajout du couple (nom,Symbole) dans la pile
-        return S
-
-
-def Chercher():
-    global TAB_SYMBOLE
-    for element in TAB_SYMBOLE.keys(): # si la variable est dans la pile, on retourne sont symbole
-        if(element == nom):
-            return TAB_SYMBOLE[element]
-nbVar = 0
-def AnaSem(N):
-    global nbVar
-    if(N.type == 'Node_Block'):
-        Begin()
-        for child in N.children:
-            AnaSem(child)
-        End()
-    elif(N.type == 'Node_Decla'):
-        S = Declare(N.valeur)
-        S.position = nbVar
-        nbVar += 1
-        S.type = "VarLoc"
-    elif(N.type == 'Node_Ref'):
-        S = Chercher(N.valeur)
-        N.symbole = S
-    else:
-        for e in N.children:
-            AnaSem(e)
-
-
-
-
 def Expression(Prio_min): #Parseur de Brat, gestions des associativités et des priorités
     N = prefix()
     if(tokenG.type == 'EOF'):
@@ -481,6 +407,96 @@ def Expression(Prio_min): #Parseur de Brat, gestions des associativités et des 
             L.children.append(M)
             N = L
     return N
+
+# Fonction des gestions des instructions, pour le moment pas encore adapté à notre nouvelle structure
+def instruction():
+    c = ','
+    if(check(TOKEN_TYPES['Point_virgule'])) :
+        return Node(NODES_TYPES["Node_Empty"],None,None)
+    elif(check(TOKEN_TYPES['OPEN_ACCOLADE'])):
+        N = Node(NODES_TYPES["Node_Block"],None,None)
+        while(not check(TOKEN_TYPES['CLOSE_ACCOLADE'])):
+            N.children.append(instruction())
+        return N
+    elif(check(TOKEN_TYPES['DEBUG'])):
+        N = Expression(0)
+        accept(TOKEN_TYPES['Point_virgule'])
+        return Node(NODES_TYPES["Node_Debug"],None,None)
+    #Gestion des variables
+    elif( tokenG.type == "int"):
+        N = Node(NODES_TYPES['Node_Seq'],None,None)
+        while True:
+            next()
+            if(tokenG.type == "IDENTIFIER"):
+                N.children.append(Node(NODES_TYPES['Node_Decla'],last.value,None))
+            if not tokenG.value == ',':
+                    break
+        next()
+        if(tokenG.type == 'Point_virgule'):
+            return N
+        else:
+            raise ValueError("Erreur : Il manque un point virgule")
+    else: # le cas d'une expression suivit d'un point virgule
+        N = Expression(0)
+        accept(TOKEN_TYPES['Point_virgule'])
+        L = Node(NODES_TYPES["Node_Drop"],None,None)
+        L.children.append(N)
+        return L
+
+# Fonction pour les variables
+def Begin():
+    TAB_SYMBOLE.append((" ", None)) #Ajout d'un élement dans la pile pour annoncer le début d'un bloc
+
+
+def End():
+    for valeur in reversed(TAB_SYMBOLE):
+        if valeur[0] != " ":
+            TAB_SYMBOLE.pop() #suppression des élements de la pile jusqu'au bloc suivant
+            continue
+        else:
+            break
+
+
+def Chercher(nom):
+    for valeur in reversed(TAB_SYMBOLE):
+        if valeur[0] == nom:
+            return valeur[1] # si la variable est dans la pile, on retourne sont symbole
+    raise ValueError("Erreur : Variable non définie dans le bloc") # sinon erreur
+
+
+def Declarer(nom):
+    for valeur in reversed(TAB_SYMBOLE):
+        if valeur[0] == nom: # si le nom de la var est déjà dans la pile on retourne une erreur
+            raise ValueError("Erreur : Variable déjà déclarée dans le bloc")
+        if valeur[0] == " ": # si c'est le début d'un bloc, on sort de la fonction
+            break
+    S = Symbole(nom,"VarLoc",None,None)  # sinon, on crée un symbole et on remplie la pile
+    TAB_SYMBOLE.append((nom, S)) #Ajout du couple (nom,Symbole) dans la pile
+    return S
+
+
+nbVar = 0
+def AnaSem(N):
+    global nbVar
+    if(N.type == 'Node_Block'):
+        Begin()
+        for child in N.children:
+            AnaSem(child)
+        End()
+    elif(N.type == 'Node_Decla'):
+        S = Declarer(N.value)
+        S.position = nbVar
+        nbVar += 1
+        S.type = "VarLoc"
+    elif(N.type == 'Node_Ref'):
+        S = Chercher(N.value)
+        N.symbole = S
+    else:
+        for e in N.children:
+            AnaSem(e)
+
+
+
 
 # def expression(prioMin):
 #     N = prefixe()
@@ -543,8 +559,12 @@ def main():
             A = AnaSyn() # Analyse Synthaxique
             # Affichage de l'arbre
             A.affiche()
+            global nbVar
+            nbVar = 0
             AnaSem(A)
+            print(" resn " + str(nbVar))
             assembleur = A.genecode() 
+            print(" drop " + str(nbVar))
             for instruction in assembleur :
                 # Affichage du code
                 print("  ",instruction)
