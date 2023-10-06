@@ -161,9 +161,11 @@ class Node:
             child.affiche()
     def genecode(self):
         if self.type == "Node_CONSTANT":
-            return [f"push {self.value}"]
+            result = f"push {self.value}"
+            return result
         elif self.type == "Node_IDENTIFIER":
-            return [f"push {self.value}"]
+            result = f"push {self.value}"
+            return result
         elif self.type == "UNAIRE":
             if self.valeur == "!":
                 genecode_enfant0 = self.children[0].genecode()
@@ -198,7 +200,7 @@ class Node:
             if(self.symbole.type == "VarLoc"):
                 print("get "+ self.symbole.position)
         elif self.type == "Node_Affectation" :
-            self.children[1].genecode()
+            print(self.children[1].genecode())
             print("dup")
             if(self.children[0].type != "Node_Ref"):
                 raise Exception("Il ne s'agit pas d'une variable")
