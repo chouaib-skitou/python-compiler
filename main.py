@@ -47,9 +47,14 @@ NODES_TYPES = {
     'Node_Decla' : 'Node_Decla',
     'Node_Ref' : 'Node_Ref',
     'Node_Affectation' : 'Node_Affectation',
-
-
+    'Node_OR' : '||',
+    'Node_AND' : '&&',
+    'Node_EQUAL' : '==',
+    'Node_NOT_EQUAL' : '!=',
+    'Node_GREATER_THAN' : '>',
+    'Node_LESS_THAN' : '<',
 }
+
 MOTS_CLES = {
     'int': 'int',
     'while': 'while',
@@ -89,7 +94,7 @@ class Symbole:
         self.nVar = nVar
 
     def affiche(self):
-        print("SYMBOLE : nom : " + self.nom+" type : "+self.type+" position : "+self.position+" nVar : "+self.nVar)
+        print("SYMBOLE : nom : " , self.nom , " type : " , self.type , " position : " , self.position ," nVar : " ,self.nVar)
 
 class ValOpe:
     def __init__(self, ndeType,ndeVal,ndeSymb, priority, AaD):
@@ -106,14 +111,13 @@ OPERATORS = {
     TOKEN_TYPES['MUL']: ValOpe('BINAIRE','*',None,7,0),
     TOKEN_TYPES['DIV']: ValOpe('BINAIRE','/',None,7,0),
     TOKEN_TYPES['MOD']: ValOpe('BINAIRE','%',None,7,0),
-    TOKEN_TYPES['AFFECTATION']: ValOpe('Node_AFFECTATION','=',None,1,1),
-    # TOKEN_TYPES['OR']: ValOpe('Node_OR',2,0),
-    # TOKEN_TYPES['AND']: ValOpe('Node_AND',3,0),
-    # TOKEN_TYPES['EQUAL']: ValOpe('Node_EQUAL',4,0),
-    # TOKEN_TYPES['NOT_EQUAL']: ValOpe('Node_NOT_EQUAL',4,0),
-    # TOKEN_TYPES['GREATER_THAN']: ValOpe('Node_GREATER_THAN',5,0),
-    # TOKEN_TYPES['LESS_THAN']: ValOpe('Node_LESS_THAN',5,0),
-
+    TOKEN_TYPES['AFFECTATION']: ValOpe('Node_Affectation','=',None,1,1),  
+    TOKEN_TYPES['OR']: ValOpe('Node_OR','||',None,2,0),
+    TOKEN_TYPES['AND']: ValOpe('Node_AND','&&',None,3,0),
+    TOKEN_TYPES['EQUAL']: ValOpe('Node_EQUAL','==',None,4,0),
+    TOKEN_TYPES['NOT_EQUAL']: ValOpe('Node_NOT_EQUAL','!=',None,4,0),
+    TOKEN_TYPES['GREATER_THAN']: ValOpe('Node_GREATER_THAN','>',None,5,0),
+    TOKEN_TYPES['LESS_THAN']: ValOpe('Node_LESS_THAN','<',None,5,0),
 }
 
 class Token:
@@ -149,7 +153,10 @@ class Node:
         return self.children
 
     def affiche(self):
-        print("Le noeud est de type : ", self.type, " et sa valeur est : ", self.value)
+        if(self.symbole == None):
+            print("Noeud de type : ", self.type, ", Valeur est : ", self.value , " , Pas de Symbole")
+        else :
+            print("Noeud de type : ", self.type, ", Valeur est : ", self.value , " , Symbole : ", self.symbole)
         for child in self.children:
             child.affiche()
     def genecode(self):
@@ -179,7 +186,7 @@ class Node:
             return genecode_enfant + [f"push dbg"]
         elif self.type == "Node_Drop":
             genecode_enfant = self.children[0].genecode()
-            return genecode_enfant + [f"drop 1"]
+            return genecode_enfant , [f"drop 1"]
         elif self.type == "Node_Decla": #gestion noeud de déclaration
             pass
         elif self.type == "Node_Empty": #gestion noeud de déclaration
@@ -191,14 +198,14 @@ class Node:
             if(self.symbole.type == "VarLoc"):
                 print("get "+ self.symbole.position)
         elif self.type == "Node_Affectation" :
-            genecode_enfant1 = self.children[1].genecode()
+            self.children[1].genecode()
             print("dup")
             if(self.children[0].type != "Node_Ref"):
                 raise Exception("Il ne s'agit pas d'une variable")
             if(self.children[0].type == "VarLoc"):
                 print("set "+self.children[0].symbole.position)
         else:
-            self.affiche()
+            print(self.type)
             raise ValueError("Type de nœud inconnu")
 
 tokenG = Token(' ',0) #token courant
@@ -340,7 +347,7 @@ def Atome():
         pass
     #Gestion des variables
     elif(check(TOKEN_TYPES['IDENTIFIER'])):
-        return Node(NODES_TYPES["Node_Ref"],last.value,None)
+        return Node(NODES_TYPES["Node_Ref"],last.value,(None,None,None,None))
     elif(check(TOKEN_TYPES['OPEN_PAREN'])):
         N = Expression(0)
         while(last.type != TOKEN_TYPES['CLOSE_PAREN']):
@@ -428,7 +435,7 @@ def instruction():
         while True:
             next()
             if(tokenG.type == "IDENTIFIER"):
-                N.children.append(Node(NODES_TYPES['Node_Decla'],last.value,None))
+                N.children.append(Node(NODES_TYPES['Node_Decla'],tokenG.value,(None,None,None,None)))
             if not tokenG.value == ',':
                     break
         next()
@@ -577,7 +584,8 @@ def main():
         file.write(str("    dbg\n"))
         file.write(str("halt"))
         file.close()
-
+    for e in TAB_SYMBOLE:
+        print(e)
 
 if __name__ == '__main__':
     main()
