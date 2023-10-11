@@ -49,7 +49,11 @@ listeTypeToken = {
     "MULT": r"\*",
     "DIV": r"\/",
     "MOINS": r"\-",
+    "PIPE": r"\|",
+    "ESPERLUETTE": r"\&",
     "PEXCLAMATION": r"\!",
+    "INFERIEUR": r"\<",
+    "SUPERIEUR": r"\>",
     "PARENTHG": r"\(",
     "PARENTHD": r"\)",
     "POINTVIRGULE": r"\;",
@@ -66,7 +70,9 @@ operateur = {
     "EQUIVALENT": {"Noeud": "N_EQUIVALENT", "Priorite": 4, "Aad": 0},
     "DIFFERENT": {"Noeud": "N_DIFFERENT", "Priorite": 4, "Aad": 0},
     "INFERIEUR": {"Noeud": "N_INFERIEUR", "Priorite": 5, "Aad": 0},
+    "INFERIEUROUEGALE": {"Noeud": "N_INFERIEUROUEGALE", "Priorite": 5, "Aad": 0},
     "SUPERIEUR": {"Noeud": "N_SUPERIEUR", "Priorite": 5, "Aad": 0},
+    "SUPERIEUROUEGALE": {"Noeud": "N_SUPERIEUROUEGALE", "Priorite": 5, "Aad": 0},
     "PLUS": {"Noeud": "N_PLUS", "Priorite": 6, "Aad": 0},
     "MOINS": {"Noeud": "N_MOINS", "Priorite": 6, "Aad": 0},
     "MULT": {"Noeud": "N_MULT", "Priorite": 7, "Aad": 0},
@@ -118,10 +124,76 @@ def analyseLexicale():
                                     token = Token("INT", "int")
                                 elif identifier == "while":
                                     token = Token("WHILE", "while")
+                                elif identifier == "for":
+                                    token = Token("FOR", "for")
                                 else:
                                     token = Token(cle, identifier)
                                 listeToken.append(token)
                                 position = position + 1
+                            elif cle == "PIPE":
+                                if (
+                                    position + 1 <= len(codeSource) - 1
+                                    and codeSource[position + 1] == "|"
+                                ):
+                                    token = Token("OU", "||")
+                                    position = position + 2
+                                else:
+                                    raise ValueError("Erreur fatale")
+                                listeToken.append(token)
+                            elif cle == "ESPERLUETTE":
+                                if (
+                                    position + 1 <= len(codeSource) - 1
+                                    and codeSource[position + 1] == "&"
+                                ):
+                                    token = Token("ET", "&&")
+                                    position = position + 2
+                                else:
+                                    raise ValueError("Erreur fatale")
+                                listeToken.append(token)
+                            elif cle == "INFERIEUR":
+                                if (
+                                    position + 1 <= len(codeSource) - 1
+                                    and codeSource[position + 1] == "="
+                                ):
+                                    token = Token("INFERIEUROUEGALE", "<=")
+                                    position = position + 2
+                                else:
+                                    token = Token("INFERIEUR", "<")
+                                    position = position + 1
+                                listeToken.append(token)
+                            elif cle == "SUPERIEUR":
+                                if (
+                                    position + 1 <= len(codeSource) - 1
+                                    and codeSource[position + 1] == "="
+                                ):
+                                    token = Token("SUPERIEUROUEGALE", ">=")
+                                    position = position + 2
+                                else:
+                                    token = Token("SUPERIEUR", ">")
+                                    position = position + 1
+                                listeToken.append(token)
+                            elif cle == "PEXCLAMATION":
+                                if (
+                                    position + 1 <= len(codeSource) - 1
+                                    and codeSource[position + 1] == "="
+                                ):
+                                    token = Token("DIFFERENT", "!=")
+                                    position = position + 2
+                                else:
+                                    token = Token("PEXCLAMATION", "!")
+                                    position = position + 1
+                                listeToken.append(token)
+                            elif cle == "AFFECTATION":
+                                if (
+                                    position + 1 <= len(codeSource) - 1
+                                    and codeSource[position + 1] == "="
+                                ):
+                                    token = Token("EQUIVALENT", "==")
+                                    position = position + 2
+                                else:
+                                    token = Token("AFFECTATION", "=")
+                                    position = position + 1
+                                listeToken.append(token)
                             else:
                                 token = Token(cle, caractereActuel)
                                 listeToken.append(token)
@@ -304,12 +376,42 @@ def instruction():
         C.ajouter_enfant(E)
         C.ajouter_enfant(I)
         C.ajouter_enfant(B)
-
+        return L
+    elif check("FOR"):
+        accept("PARENTHG")
+        E1 = expression(0)
+        accept("POINTVIRGULE")
+        E2 = expression(0)
+        accept("POINTVIRGULE")
+        E3 = expression(0)
+        accept("PARENTHD")
+        I = instruction()
+        S1 = Noeud("N_SEQUENCE", "")
+        D1 = Noeud("N_DROP", "")
+        L = Noeud("N_LOOP", "")
+        C = Noeud("N_COND", "")
+        S2 = Noeud("N_SEQUENCE", "")
+        T = Noeud("N_TARGET", "")
+        D2 = Noeud("N_DROP", "")
+        B = Noeud("N_BREAK", "")
+        D2.ajouter_enfant(E3)
+        S2.ajouter_enfant(I)
+        S2.ajouter_enfant(T)
+        S2.ajouter_enfant(D2)
+        C.ajouter_enfant(E2)
+        C.ajouter_enfant(S2)
+        C.ajouter_enfant(B)
+        L.ajouter_enfant(C)
+        D1.ajouter_enfant(E1)
+        S1.ajouter_enfant(D1)
+        S1.ajouter_enfant(L)
+        return S1
     else:
         N = expression(0)
         accept("POINTVIRGULE")
-        return N
-        # return Noeud("N_DROP", N)
+        D = Noeud("N_DROP", "")
+        D.ajouter_enfant(N)
+        return D
 
 
 def analyseSyntaxique():
@@ -330,6 +432,9 @@ def analyseSyntaxique():
 
 
 def genecode(N):
+    global nbLabel
+    global labelContinue
+    global labelBreak
     if N.type == "CONSTANTE":
         print(f"push {N.valeur}")
     elif N.type == "N_MOINS_UNAIRE":
@@ -341,7 +446,20 @@ def genecode(N):
         print("not")
     elif N.type == "IDENTIFIER":
         pass
-    elif N.type in ["N_PLUS", "N_MOINS", "N_MULT", "N_DIV"]:
+    elif N.type in [
+        "N_PLUS",
+        "N_MOINS",
+        "N_MULT",
+        "N_DIV",
+        "N_EQUIVALENT",
+        "N_DIFFERENT",
+        "N_INFERIEUR",
+        "N_INFERIEUROUEGALE",
+        "N_SUPERIEUR",
+        "N_SUPERIEUROUEGALE",
+        "N_ET",
+        "N_OU",
+    ]:
         operation = ""
         if N.type == "N_PLUS":
             operation = "add"
@@ -351,9 +469,28 @@ def genecode(N):
             operation = "mul"
         elif N.type == "N_DIV":
             operation = "div"
+        elif N.type == "N_EQUIVALENT":
+            operation = "cmpeq"
+        elif N.type == "N_DIFFERENT":
+            operation = "cmpne"
+        elif N.type == "N_INFERIEUR":
+            operation = "cmplt"
+        elif N.type == "N_INFERIEUROUEGALE":
+            operation = "cmple"
+        elif N.type == "N_SUPERIEUR":
+            operation = "cmpgt"
+        elif N.type == "N_SUPERIEUROUEGALE":
+            operation = "cmpge"
+        elif N.type == "N_OU":
+            operation = "or"
+        elif N.type == "N_ET":
+            operation = "and"
         genecode(N.enfants[0])
         genecode(N.enfants[1])
-        print(f"push {operation}")
+        print(f"{operation}")
+    elif N.type == "N_DROP":
+        genecode(N.enfants[0])
+        print("drop 1")
     elif N.type == "N_DECLARE":
         pass
     elif N.type == "N_BLOCK":
@@ -377,19 +514,18 @@ def genecode(N):
         else:
             raise ValueError("Erreur fatale")
     elif N.type == "N_COND":
-        global nbLabel
         l1 = 0
         l2 = 0
         if len(N.enfants) == 2:
-            nbLabel += 1
             l1 = nbLabel
+            nbLabel += 1
             genecode(N.enfants[0])
             print("jumpf l" + str(l1))
             genecode(N.enfants[1])
             print(".l" + str(l1))
         else:
-            nbLabel += 1
             l1 = nbLabel
+            nbLabel += 1
             genecode(N.enfants[0])
             print("jumpf if_" + str(l1))
             genecode(N.enfants[1])
@@ -398,13 +534,27 @@ def genecode(N):
             genecode(N.enfants[2])
             print(".else_" + str(l1))
     elif N.type == "N_TARGET":
-        global labelContinue
         print(".l" + str(labelContinue))
     elif N.type == "N_BREAK":
-        global labelBreak
         print("jump l" + str(labelBreak))
     elif N.type == "N_CONTINUE":
         print("jump l" + str(labelContinue))
+    elif N.type == "N_LOOP":
+        labelDebut = nbLabel
+        nbLabel += 1
+        saveContinue = labelContinue
+        saveBreak = labelBreak
+        labelContinue = nbLabel
+        nbLabel += 1
+        labelBreak = nbLabel
+        nbLabel += 1
+        print(".l" + str(labelDebut))
+        for enfant in N.enfants:
+            genecode(enfant)
+        print("jump l" + str(labelDebut))
+        print(".l" + str(labelBreak))
+        labelContinue = saveContinue
+        labelBreak = saveBreak
     elif N.type == "N_FONCTION":
         #        print(".", N.valeur)
         #        print("resn", N.S.nbVar)
@@ -448,28 +598,31 @@ def genecode(N):
         #        print("push", N.enfants[0].Symbol.position + 1)
         #        print("sub")
         pass
+
+
 #    else:
 #        raise ValueError("Type de nœud inconnu", N.type)
 
 
 def analyseSemantique(Noeud):
     global nbVar
-    if Noeud.type == "N_BLOCK":
-        Begin()
-        for enfant in Noeud.enfants:
-            analyseSemantique(enfant)
-        End()
-    if Noeud.type == "N_DECLARE":
-        S = Declarer(Noeud.valeur)
-        S.position = nbVar
-        nbVar = nbVar + 1
-        S.type = "VARLOC"
-    if Noeud.type == "N_REFERENCE":
-        S = Chercher(Noeud.valeur)
-        Noeud.symbole = S
-    else:
-        for enfant in Noeud.enfants:
-            analyseSemantique(enfant)
+    match Noeud.type:
+        case "N_BLOCK":
+            Begin()
+            for enfant in Noeud.enfants:
+                analyseSemantique(enfant)
+            End()
+        case "N_DECLARE":
+            S = Declarer(Noeud.valeur)
+            S.position = nbVar
+            nbVar = nbVar + 1
+            S.type = "VARLOC"
+        case "N_REFERENCE":
+            S = Chercher(Noeud.valeur)
+            Noeud.symbole = S
+        case _:
+            for enfant in Noeud.enfants:
+                analyseSemantique(enfant)
 
 
 #    nbVar, nbVal = 0
