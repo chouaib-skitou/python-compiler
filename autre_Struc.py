@@ -603,7 +603,6 @@ def genecode(N):
 #    else:
 #        raise ValueError("Type de nœud inconnu", N.type)
 
-
 def analyseSemantique(Noeud):
     global nbVar
     match Noeud.type:

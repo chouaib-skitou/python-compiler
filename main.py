@@ -137,7 +137,7 @@ class Token:
     
 class Node:
     symbole = None #par défaut on met symbole à None, car il ne concerne que les Noeud Ref
-    def __init__(self, type, value,symbole):
+    def __init__(self, type, value, symbole):
         self.type = type
         self.value = value
         self.children = []
@@ -204,8 +204,9 @@ class Node:
             print("dup")
             if(self.children[0].type != "Node_Ref"):
                 raise Exception("Il ne s'agit pas d'une variable")
-            if(self.children[0].type == "VarLoc"):
-                print("set "+self.children[0].symbole.position)
+            if(self.children[0].symbole.type == "VarLoc"):
+                result = f"set {self.children[0].symbole.position}"
+                print(result)
         else:
             print(self.type)
             raise ValueError("Type de nœud inconnu")
@@ -349,7 +350,7 @@ def Atome():
         pass
     #Gestion des variables
     elif(check(TOKEN_TYPES['IDENTIFIER'])):
-        return Node(NODES_TYPES["Node_Ref"],last.value,(None,None,None,None))
+        return Node(NODES_TYPES["Node_Ref"],last.value,(None,"VarLoc",None,None))
     elif(check(TOKEN_TYPES['OPEN_PAREN'])):
         N = Expression(0)
         while(last.type != TOKEN_TYPES['CLOSE_PAREN']):
@@ -437,7 +438,7 @@ def instruction():
         while True:
             next()
             if(tokenG.type == "IDENTIFIER"):
-                N.children.append(Node(NODES_TYPES['Node_Decla'],tokenG.value,(None,None,None,None)))
+                N.children.append(Node(NODES_TYPES['Node_Decla'],tokenG.value,(None,"VarLoc",None,None)))
             if not tokenG.value == ',':
                     break
         next()
