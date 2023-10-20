@@ -25,6 +25,30 @@ TOKEN_TYPES = {
     'CLOSE_ACCOLADE': 'CLOSE_ACCOLADE',
     'OPEN_ACCOLADE': 'OPEN_ACCOLADE',
     'DEBUG': 'DEBUG',
+    'VIRGULE': 'VIRGULE',
+    "int": "int",
+    'while': 'while',
+    'if': 'if',
+    'else': 'else',
+    'return': 'return',
+    'main': 'main',
+    'void': 'void',
+    'char': 'char',
+    'float': 'float',
+    'double': 'double',
+    'for': 'for',
+    'do': 'do',
+    'switch': 'switch',
+    'case': 'case',
+    'break': 'break',
+    'continue': 'continue',
+    'struct': 'struct',
+    'typedef': 'typedef',
+    'enum': 'enum',
+    'unsigned': 'unsigned',
+    'long': 'long',
+    'short': 'short',
+    'signed': 'signed',
 
 }
 NODES_TYPES = {
@@ -42,6 +66,7 @@ NODES_TYPES = {
     'Node_Block' : 'Node_Block',
     'Node_Debug' : 'Node_Debug',
     'Node_Drop' : 'Node_Drop',
+    'Node_Cond' : 'Node_Cond',
     #Pour les variables
     'Node_Seq' : 'Node_Seq',
     'Node_Decla' : 'Node_Decla',
@@ -56,7 +81,7 @@ NODES_TYPES = {
 }
 
 MOTS_CLES = {
-    'int': 'int',
+    "int": "int",
     'while': 'while',
     'if': 'if',
     'else': 'else',
@@ -137,7 +162,7 @@ class Token:
     
 class Node:
     symbole = None #par défaut on met symbole à None, car il ne concerne que les Noeud Ref
-    def __init__(self, type, value, symbole):
+    def __init__(self, type, value = None, symbole = None):
         self.type = type
         self.value = value
         self.children = []
@@ -152,13 +177,18 @@ class Node:
     def get_children(self):
         return self.children
 
-    def affiche(self):
-        if(self.symbole == None):
-            print("Noeud de type : ", self.type, ", Valeur est : ", self.value , " , Pas de Symbole")
-        else :
-            print("Noeud de type : ", self.type, ", Valeur est : ", self.value , " , Symbole : ", self.symbole)
-        for child in self.children:
-            child.affiche()
+    # def affiche(self):
+    #     if(self.symbole == None):
+    #         print("Noeud de type : ", self.type, ", Valeur est : ", self.value , " , Pas de Symbole")
+    #     else :
+    #         print("Noeud de type : ", self.type, ", Valeur est : ", self.value , " , Symbole : ", self.symbole)
+    #     for child in self.children:
+    #         child.affiche()
+    def affiche(self, niveau=0):
+        indent = "  " * niveau
+        print(f"{indent}{self.type}: {self.value}")
+        for enfant in self.children:
+            enfant.affiche(niveau + 1)
     def genecode(self):
         if self.type == "Node_CONSTANT":
             result = f"push {self.value}"
@@ -222,9 +252,6 @@ class Node:
             print(self.type)
             raise ValueError("Type de nœud inconnu")
 
-tokenG = Token(' ',0) #token courant
-last = Token(' ',1) #token précédent 
-Token_tab =[]
 
 def AnaLex(chaine):   
     position = 0
@@ -246,6 +273,8 @@ def AnaLex(chaine):
 
         elif c == '+':
             tokenG = Token(TOKEN_TYPES['PLUS'], c)
+        elif c == ',':
+            tokenG = Token(TOKEN_TYPES['VIRGULE'], c)
         elif c == '-':
             tokenG = Token(TOKEN_TYPES['MINUS'], c)
         elif c == ';':
@@ -310,10 +339,9 @@ def AnaLex(chaine):
             tokenG = Token(TOKEN_TYPES['DEBUG'], c)
         elif c.isalnum():
             identifier_value = c
-            position += 1
-            while position < len(chaine) and (chaine[position].isalnum() or chaine[position] == '_'):
-                identifier_value += chaine[position]
+            while position + 1 < len(chaine) - 1 and (chaine[position + 1].isalnum() or chaine[position + 1] == '_'):
                 position += 1
+                identifier_value += str(chaine[position])
             if identifier_value in MOTS_CLES:
                 tokenG = Token(MOTS_CLES[identifier_value], identifier_value)
             else:
@@ -340,7 +368,6 @@ def next():
         tokenG = Token_tab[positionToken_tab]
         last = Token_tab[positionToken_tab - 1]
     positionToken_tab = positionToken_tab + 1
-    tokenG.affiche() #affichage du token en cours
 
 
 def check(token_type):
@@ -352,11 +379,11 @@ def check(token_type):
 
 def accept(token_type):
     if not check(token_type):
-        raise Exception("Le token est invalid  : " + str(token_type))
+        raise Exception("Le token est invalid  : " + str(token_type) + " requis : " + tokenG.type)
 
 def Atome():
     if(check(TOKEN_TYPES['CONSTANT'])) :
-        return Node(NODES_TYPES["Node_CONSTANT"],last.value,None)
+        return Node(NODES_TYPES["Node_CONSTANT"],last.value)
     elif(tokenG.type in MOTS_CLES):
         pass
     #Gestion des variables
@@ -429,28 +456,24 @@ def instruction():
         accept(TOKEN_TYPES['Point_virgule'])
         return Node(NODES_TYPES["Node_Debug"],None,None)
     #Gestion des variables
-    elif( tokenG.type == "int"):
+    elif(check(MOTS_CLES["int"])): 
         N = Node(NODES_TYPES['Node_Seq'],None,None)
         while True:
-            next()
-            if(tokenG.type == "IDENTIFIER"):
-                N.children.append(Node(NODES_TYPES['Node_Decla'],tokenG.value,(None,"VarLoc",None,None)))
-            if not tokenG.value == ',':
-                    break
-        next()
-        if(tokenG.type == 'Point_virgule'):
-            return N
-        else:
-            raise ValueError("Erreur : Il manque un point virgule")
-    elif( tokenG.type == "if"):
-        accept(NODES_TYPES['OPEN_PAREN'])
+            accept(TOKEN_TYPES['IDENTIFIER'])
+            N.children.append(Node(NODES_TYPES['Node_Decla'],last.value,(None,"VarLoc",None,None)))
+            if not check(TOKEN_TYPES['VIRGULE']):
+                break
+        accept(TOKEN_TYPES['Point_virgule'])
+        return N
+    elif(check(MOTS_CLES["if"])):
+        accept(TOKEN_TYPES['OPEN_PAREN'])
         N = Expression(0)
-        accept(NODES_TYPES['CLOSE_PAREN'])
+        accept(TOKEN_TYPES['CLOSE_PAREN'])
         I = instruction()
-        ND = Node('Node_Cond',None)
+        ND = Node(NODES_TYPES['Node_Cond'],None)
         ND.children.append(N)
         ND.children.append(I)
-
+        return ND
     else: # le cas d'une expression suivit d'un point virgule
         N = Expression(0)
         accept(TOKEN_TYPES['Point_virgule'])
@@ -490,8 +513,7 @@ def Declarer(nom):
     return S
 
 
-nbVar = 0
-nbLabel = 0
+
 def AnaSem(N):
     global nbVar
     if(N.type == 'Node_Block'):
@@ -566,23 +588,22 @@ def AnaSyn():
 
 # Main program
 def main():
+    global nbVar
+    global nbLabel
     with open('test_1.txt', 'r') as file: # ouverture du fichier
         text = file.read()
         AnaLex(text) #initialisation de l'analyse Lexicale
         next() #Appel à la fonction next
-        print(".start")
+        print("Liste des tokens :")
+        for x in Token_tab:
+            x.affiche()
+        print()
         while(tokenG.type != "EOF"):
             A = AnaSyn() # Analyse Synthaxique
             # Affichage de l'arbre
             A.affiche()
-            global nbVar
-            global nbLabel
-            nbVar = 0
             AnaSem(A)
-            print(" resn " + str(nbVar))
             A.genecode() 
-            print(" drop " + str(nbVar))
-        print("halt \n")
          # redirection of execution result inside a file.txt
     # with open('./msm/msm/result.txt', 'w') as file:
     #     file.write(str(".start\n"))
@@ -593,6 +614,10 @@ def main():
     #     file.close()
     # for e in TAB_SYMBOLE:
     #     print(e)
-
+nbVar = 0
+nbLabel = 0
+tokenG = Token(' ',0) #token courant
+last = Token(' ',1) #token précédent 
+Token_tab =[]
 if __name__ == '__main__':
     main()
