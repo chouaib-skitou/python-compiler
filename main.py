@@ -199,6 +199,17 @@ class Node:
         elif self.type == "Node_Ref" : #gestions des noeuds de variables
             if(self.symbole.type == "VarLoc"):
                 print("get "+ self.symbole.position)
+        elif self.type == "Node_Cond" :
+            indice1 = 0
+            indice2 = 0
+            global nbLabel
+            if len(self.children) == 2:
+                indice1 = nbLabel
+                nbLabel += 1
+                self.children[0].genecode()
+                print("jumpf l" + str(indice1))
+                self.children[1].genecode()
+                print(".l" + str(indice1))
         elif self.type == "Node_Affectation" :
             print(self.children[1].genecode())
             print("dup")
@@ -360,21 +371,6 @@ def Atome():
         raise Exception(f"Atome inattendu: {last.type}")
 
 
-# def prefix():
-#     if(check(TOKEN_TYPES['MINUS'])) :
-#         N = prefix() 
-#         return Node(NODES_TYPES["Node_MINUS_UNAIRY"],N)
-
-#     elif(check(TOKEN_TYPES['NOT'])) :
-#         N = prefix()
-#         return Node(NODES_TYPES["Node_NOT"],N)
-
-#     elif(check(TOKEN_TYPES['PLUS'])) :
-#         N = prefix()
-#         return N
-#     else :
-#         N = Atome()
-#         return N
 
 
 def prefix():
@@ -446,6 +442,15 @@ def instruction():
             return N
         else:
             raise ValueError("Erreur : Il manque un point virgule")
+    elif( tokenG.type == "if"):
+        accept(NODES_TYPES['OPEN_PAREN'])
+        N = Expression(0)
+        accept(NODES_TYPES['CLOSE_PAREN'])
+        I = instruction()
+        ND = Node('Node_Cond',None)
+        ND.children.append(N)
+        ND.children.append(I)
+
     else: # le cas d'une expression suivit d'un point virgule
         N = Expression(0)
         accept(TOKEN_TYPES['Point_virgule'])
@@ -486,6 +491,7 @@ def Declarer(nom):
 
 
 nbVar = 0
+nbLabel = 0
 def AnaSem(N):
     global nbVar
     if(N.type == 'Node_Block'):
@@ -570,25 +576,23 @@ def main():
             # Affichage de l'arbre
             A.affiche()
             global nbVar
+            global nbLabel
             nbVar = 0
             AnaSem(A)
             print(" resn " + str(nbVar))
-            assembleur = A.genecode() 
+            A.genecode() 
             print(" drop " + str(nbVar))
-            for instruction in assembleur :
-                # Affichage du code
-                print("  ",instruction)
         print("halt \n")
          # redirection of execution result inside a file.txt
-    with open('./msm/msm/result.txt', 'w') as file:
-        file.write(str(".start\n"))
-        for instruction in assembleur :
-            file.write('    '+str(instruction)+'\n')
-        file.write(str("    dbg\n"))
-        file.write(str("halt"))
-        file.close()
-    for e in TAB_SYMBOLE:
-        print(e)
+    # with open('./msm/msm/result.txt', 'w') as file:
+    #     file.write(str(".start\n"))
+    #     for instruction in assembleur :
+    #         file.write('    '+str(instruction)+'\n')
+    #     file.write(str("    dbg\n"))
+    #     file.write(str("halt"))
+    #     file.close()
+    # for e in TAB_SYMBOLE:
+    #     print(e)
 
 if __name__ == '__main__':
     main()
