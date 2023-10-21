@@ -81,6 +81,8 @@ NODES_TYPES = {
     'Node_NOT_EQUAL' : '!=',
     'Node_GREATER_THAN' : '>',
     'Node_LESS_THAN' : '<',
+    'Node_GREATER_THAN_EQUAL' : '>=',
+    'Node_LESS_THAN_EQUAL' : '<=',
 }
 
 MOTS_CLES = {
@@ -146,6 +148,8 @@ OPERATORS = {
     TOKEN_TYPES['NOT_EQUAL']: ValOpe('Node_NOT_EQUAL','!=',None,4,0),
     TOKEN_TYPES['GREATER_THAN']: ValOpe('Node_GREATER_THAN','>',None,5,0),
     TOKEN_TYPES['LESS_THAN']: ValOpe('Node_LESS_THAN','<',None,5,0),
+    TOKEN_TYPES['GREATER_THAN_EQUAL']: ValOpe('Node_GREATER_THAN_EQUAL','>=',None,5,0),
+    TOKEN_TYPES['LESS_THAN_EQUAL']: ValOpe('Node_LESS_THAN_EQUAL','<=',None,5,0),
 }
 
 class Token:
@@ -208,7 +212,9 @@ class Node:
                             "Node_EQUAL",
                             "Node_NOT_EQUAL",
                             "Node_GREATER_THAN",
-                            "Node_LESS_THAN"]:
+                            "Node_GREATER_THAN_EQUAL",
+                            "Node_LESS_THAN",
+                            "Node_LESS_THAN_EQUAL"]:
             genecode_enfant0 = self.children[0].genecode()
             genecode_enfant1 = self.children[1].genecode()
             operation = ""
@@ -232,6 +238,10 @@ class Node:
                 operation = "cmpgt"
             elif self.value == "<":
                 operation = "cmplt"
+            elif self.value == ">=":
+                operation = "cmpge"
+            elif self.value == "<=":
+                operation = "cmple"
             genecode_enfant0
             genecode_enfant1
             print(operation)
