@@ -70,6 +70,7 @@ NODES_TYPES = {
     'Node_Loop' : 'Node_Loop',
     'Node_Target' : 'Node_Target',
     'Node_Break' : 'Node_Break',
+    'Node_Return' : 'Node_Return',
     #Pour les variables
     'Node_Seq' : 'Node_Seq',
     'Node_Decla' : 'Node_Decla',
@@ -248,6 +249,9 @@ class Node:
         elif self.type == "Node_Debug":
             self.children[0].genecode()
             print("dbg")
+        elif self.type == "Node_Return":
+            self.children[0].genecode()
+            print("ret")
         elif self.type == "Node_Drop":
             self.children[0].genecode()
             print("drop 1")
@@ -410,6 +414,8 @@ def AnaLex(chaine):
                 identifier_value += str(chaine[position])
             if identifier_value in MOTS_CLES:
                 tokenG = Token(MOTS_CLES[identifier_value], identifier_value)
+            elif identifier_value == 'dbg':
+                tokenG = Token(TOKEN_TYPES['DEBUG'], identifier_value)
             else:
                 tokenG = Token(TOKEN_TYPES['IDENTIFIER'], identifier_value)
         else:
@@ -510,7 +516,6 @@ def Expression(Prio_min): #Parseur de Brat, gestions des associativités et des 
 
 # Fonction des gestions des instructions, pour le moment pas encore adapté à notre nouvelle structure
 def instruction():
-    c = ','
     if(check(TOKEN_TYPES['Point_virgule'])) :
         return Node(NODES_TYPES["Node_Empty"],None,None)
     elif(check(TOKEN_TYPES['OPEN_ACCOLADE'])):
@@ -519,9 +524,17 @@ def instruction():
             N.children.append(instruction())
         return N
     elif(check(TOKEN_TYPES['DEBUG'])):
-        N = Expression(0)
+        E = Expression(0)
         accept(TOKEN_TYPES['Point_virgule'])
-        return Node(NODES_TYPES["Node_Debug"],None,None)
+        N = Node(NODES_TYPES["Node_Debug"],None,None)
+        N.children.append(E)
+        return N
+    elif(check(MOTS_CLES["return"])): 
+        E = Expression(0)
+        accept(TOKEN_TYPES['Point_virgule'])
+        N = Node(NODES_TYPES["Node_Return"],None,None)
+        N.children.append(E)
+        return N
     #Gestion des variables
     elif(check(MOTS_CLES["int"])): 
         N = Node(NODES_TYPES['Node_Seq'],None,None)
