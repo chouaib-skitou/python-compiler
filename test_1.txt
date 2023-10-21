@@ -2,6 +2,12 @@
     int a ;
     a = 0;
     if(0){
-        debug 0;
+       a = 12;
+    } else {
+        a = 0;
     }
+    while(0) {
+        a = 0;
+    }
+    int i;
 }
