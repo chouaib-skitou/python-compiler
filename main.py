@@ -359,42 +359,42 @@ def AnaLex(chaine):
             next_char = chaine[position + 1] if position + 1 < len(chaine) else None
             if next_char == '=':
                 tokenG = Token(TOKEN_TYPES['EQUAL'], '==')
-                position += 2
+                position += 1
             else:
                 tokenG = Token(TOKEN_TYPES['AFFECTATION'], c)
         elif c == '!':
             next_char = chaine[position + 1] if position + 1 < len(chaine) else None
             if next_char == '=':
                 tokenG = Token(TOKEN_TYPES['NOT_EQUAL'], '!=')
-                position += 2
+                position += 1
             else:
                 tokenG = Token(TOKEN_TYPES['NOT'], '!')
         elif c == '|':
             next_char = chaine[position + 1] if position + 1 < len(chaine) else None
             if next_char == '|':
                 tokenG = Token(TOKEN_TYPES['OR'], '||')
-                position += 2
+                position += 1
             else:
                 raise Exception("Le token est invalide")
         elif c == '&':
             next_char = chaine[position + 1] if position + 1 < len(chaine) else None
             if next_char == '&':
                 tokenG = Token(TOKEN_TYPES['AND'], '&&')
-                position += 2
+                position += 1
             else:
                 raise Exception("Le token est invalide")
         elif c == '<':
             next_char = chaine[position + 1] if position + 1 < len(chaine) else None
             if next_char == '=':
                 tokenG = Token(TOKEN_TYPES['LESS_THAN_EQUAL'], '<=')
-                position += 2
+                position += 1
             else:
                 tokenG = Token(TOKEN_TYPES['LESS_THAN'], c)
         elif c == '>':
             next_char = chaine[position + 1] if position + 1 < len(chaine) else None
             if next_char == '=':
                 tokenG = Token(TOKEN_TYPES['GREATER_THAN_EQUAL'], '>=')
-                position += 2
+                position += 1
             else:
                 tokenG = Token(TOKEN_TYPES['GREATER_THAN'], c)
         elif c == '(':
