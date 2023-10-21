@@ -360,9 +360,6 @@ def AnaLex(chaine):
             if next_char == '=':
                 tokenG = Token(TOKEN_TYPES['EQUAL'], '==')
                 position += 2
-            elif next_char == '<':
-                tokenG = Token(TOKEN_TYPES['LESS_THAN_EQUAL'], '=<')
-                position += 2
             else:
                 tokenG = Token(TOKEN_TYPES['AFFECTATION'], c)
         elif c == '!':
@@ -387,6 +384,11 @@ def AnaLex(chaine):
             else:
                 raise Exception("Le token est invalide")
         elif c == '<':
+            next_char = chaine[position + 1] if position + 1 < len(chaine) else None
+            if next_char == '=':
+                tokenG = Token(TOKEN_TYPES['LESS_THAN_EQUAL'], '<=')
+                position += 2
+            else:
                 tokenG = Token(TOKEN_TYPES['LESS_THAN'], c)
         elif c == '>':
             next_char = chaine[position + 1] if position + 1 < len(chaine) else None
