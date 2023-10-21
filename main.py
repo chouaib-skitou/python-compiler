@@ -67,6 +67,9 @@ NODES_TYPES = {
     'Node_Debug' : 'Node_Debug',
     'Node_Drop' : 'Node_Drop',
     'Node_Cond' : 'Node_Cond',
+    'Node_Loop' : 'Node_Loop',
+    'Node_Target' : 'Node_Target',
+    'Node_Break' : 'Node_Break',
     #Pour les variables
     'Node_Seq' : 'Node_Seq',
     'Node_Decla' : 'Node_Decla',
@@ -190,6 +193,8 @@ class Node:
         for enfant in self.children:
             enfant.affiche(niveau + 1)
     def genecode(self):
+        global labelContinue
+        global labelBreak
         if self.type == "Node_CONSTANT":
             result = f"push {self.value}"
             return result
@@ -217,8 +222,8 @@ class Node:
             genecode_enfant = self.children[0].genecode()
             return genecode_enfant + [f"push dbg"]
         elif self.type == "Node_Drop":
-            genecode_enfant = self.children[0].genecode()
-            return genecode_enfant , [f"drop 1"]
+            self.children[0].genecode()
+            print("drop 1")
         elif self.type == "Node_Decla": #gestion noeud de déclaration
             pass
         elif self.type == "Node_Empty": #gestion noeud de déclaration
@@ -240,6 +245,38 @@ class Node:
                 print("jumpf l" + str(indice1))
                 self.children[1].genecode()
                 print(".l" + str(indice1))
+            else:
+                indice1 = nbLabel
+                nbLabel += 1
+                self.children[0].genecode()
+                print("jumpf if_" + str(indice1))
+                self.children[1].genecode()
+                print("jumpf else_" + str(indice1))
+                print(".if_" + str(indice1))
+                self.children[2].genecode()
+                print(".else_" + str(indice1))
+        elif self.type == "Node_Target" :
+            print(".l" + str(labelContinue))
+        elif self.type == "Node_Break" :
+            print(".l" + str(labelBreak))
+        elif self.type == "Node_Continue":
+            print("jump l" + str(labelContinue))
+        elif self.type == "Node_Loop" :
+            labelDebut = nbLabel
+            nbLabel += 1
+            saveContinue = labelContinue
+            saveBreak = labelBreak
+            labelContinue = nbLabel
+            nbLabel += 1
+            labelBreak = nbLabel
+            nbLabel += 1
+            print(".l" + str(labelDebut))
+            for child in self.children:
+                child.genecode()
+            print("jump l" + str(labelDebut))
+            print(".l" + str(labelBreak))
+            labelContinue = saveContinue
+            labelBreak = saveBreak
         elif self.type == "Node_Affectation" :
             print(self.children[1].genecode())
             print("dup")
@@ -396,6 +433,7 @@ def Atome():
         return N
     else :
         raise Exception(f"Atome inattendu: {last.type}")
+    
 
 
 
@@ -470,14 +508,62 @@ def instruction():
         N = Expression(0)
         accept(TOKEN_TYPES['CLOSE_PAREN'])
         I = instruction()
+        I2 = None
+        if (check(MOTS_CLES["else"])):
+            I2 = instruction()
         ND = Node(NODES_TYPES['Node_Cond'],None)
         ND.children.append(N)
         ND.children.append(I)
+        if I2 is not None:
+            ND.children.append(I2)
         return ND
+    elif(check(MOTS_CLES["while"])):
+        accept(TOKEN_TYPES['OPEN_PAREN'])
+        E = Expression(0)
+        accept(TOKEN_TYPES['CLOSE_PAREN'])
+        I = instruction()
+        L = Node(NODES_TYPES['Node_Loop'],None)
+        T = Node(NODES_TYPES['Node_Target'],None)
+        C = Node(NODES_TYPES['Node_Cond'],None)
+        B = Node(NODES_TYPES['Node_Break'],None)
+        L.children.append(T)
+        L.children.append(C)
+        C.children.append(E)
+        C.children.append(I)
+        C.children.append(B)
+        return L
+    elif(check(MOTS_CLES["for"])):
+        accept(TOKEN_TYPES['OPEN_PAREN'])
+        E1 = Expression(0)
+        accept(TOKEN_TYPES['Point_virgule'])
+        E2 = Expression(0)
+        accept(TOKEN_TYPES['Point_virgule'])
+        E3 = Expression(0)
+        I = instruction()
+        NS1 = Node(NODES_TYPES['Node_Seq'],None)
+        ND1 = Node(NODES_TYPES['Node_Drop'],None)
+        L = Node(NODES_TYPES['Node_Loop'],None)
+        C = Node(NODES_TYPES['Node_Cond'],None)
+        NS2 = Node(NODES_TYPES['Node_Seq'],None)
+        T = Node(NODES_TYPES['Node_Target'],None)
+        ND2 = Node(NODES_TYPES['Node_Drop'],None)
+        B = Node(NODES_TYPES['Node_Break'],None)
+        ND2.children.append(E3)
+        NS2.children.append(I)
+        NS2.children.append(T)
+        NS2.children.append(ND2)
+        C.children.append(E2)
+        C.children.append(NS2)
+        C.children.append(B)
+        L.children.append(C)
+        ND1.children.append(E1)
+        NS1.children.append(ND1)
+        NS1.children.append(L)
+        return NS1
     else: # le cas d'une expression suivit d'un point virgule
         N = Expression(0)
         accept(TOKEN_TYPES['Point_virgule'])
-        L = Node(NODES_TYPES["Node_Drop"],None,None)
+        L = Node(NODES_TYPES["Node_Drop"],None)
         L.children.append(N)
         return L
 
@@ -534,55 +620,6 @@ def AnaSem(N):
             AnaSem(e)
 
 
-
-
-# def expression(prioMin):
-#     N = prefixe()
-#     while OPERATORS.get(token.type) is not None:
-#         op = OPERATORS[token.type_]
-#         if op["Priorite"] <= prioMin:
-#             break
-#         next()
-#         M = expression(op["Priorite"] - op["Aad"])
-#         noeud = Noeud(op["Noeud"], "")
-#         noeud.ajouter_enfant(N)
-#         noeud.ajouter_enfant(M)
-#         N = noeud
-#     return N
-
-# # Fonction pour analyser les expressions
-# def expression():
-#     noeud = prefix()
-#     while tokenG.type in OPERATORS:
-#         op = tokenG
-#         noeud_droit = prefix()
-#         noeud_gauche = noeud
-#         noeud = Node("BINAIRE", op.value,None)
-#         noeud.children.append(noeud_gauche)
-#         noeud.children.append(noeud_droit)
-#     return noeud     
-# def  Genecode(N):
-#     if N.type == 'Node_CONSTANT' :
-#         print("push",N.value)
-#     elif N.type == 'Node_NOT' :
-#         Gencode(N.children[0])
-#         print("not")
-#     elif N.type == "BINAIRE" :
-#         Genecode(N.children[0])
-#         Genecode(N.children[1])
-#         if N.value == '-':
-#             print("sub")
-#         elif N.value == '*':
-#             print("mul")
-#         elif N.value == '/':
-#             print("div")
-#         elif N.value == '%':
-#             print("mod")
-#         elif N.value == '+':
-#             print("add")
-#     N.affiche()
-
-
 def AnaSyn():
     return instruction() #expression()  
 
@@ -604,18 +641,10 @@ def main():
             A.affiche()
             AnaSem(A)
             A.genecode() 
-         # redirection of execution result inside a file.txt
-    # with open('./msm/msm/result.txt', 'w') as file:
-    #     file.write(str(".start\n"))
-    #     for instruction in assembleur :
-    #         file.write('    '+str(instruction)+'\n')
-    #     file.write(str("    dbg\n"))
-    #     file.write(str("halt"))
-    #     file.close()
-    # for e in TAB_SYMBOLE:
-    #     print(e)
 nbVar = 0
 nbLabel = 0
+labelContinue = 0
+labelBreak = 0
 tokenG = Token(' ',0) #token courant
 last = Token(' ',1) #token précédent 
 Token_tab =[]
