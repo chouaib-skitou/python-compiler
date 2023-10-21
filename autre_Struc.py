@@ -6,6 +6,7 @@ Created on Tue Aug 29 16:50:59 2023
 
 """
 import re
+import sys
 
 
 class Token:
@@ -24,18 +25,14 @@ class Noeud:
     def ajouter_enfant(self, enfant):
         self.enfants.append(enfant)
 
-    def afficher(self, niveau=0):
-        indent = "  " * niveau
-        print(f"{indent}{self.type}: {self.valeur}")
-        for enfant in self.enfants:
-            enfant.afficher(niveau + 1)
 
 
 class Symbole:
-    def __init__(self, nom, type=None, position=None):
+    def __init__(self, nom, type=None, position=None, nbVar=0):
         self.nom = nom
         self.type = type
         self.position = position
+        self.nbVar = nbVar
 
 
 listeToken = []
@@ -44,11 +41,12 @@ TableSymbole = []
 
 listeTypeToken = {
     "CONSTANTE": r"[0-9]+",
-    "IDENTIFIER": r"\b[a-zA-Z][a-zA-Z0-9]*\b",
+    "IDENTIFIER": r"[a-zA-Z_][a-zA-Z0-9_]*",
     "PLUS": r"\+",
     "MULT": r"\*",
     "DIV": r"\/",
     "MOINS": r"\-",
+    "MODULO": r"\%",
     "PIPE": r"\|",
     "ESPERLUETTE": r"\&",
     "PEXCLAMATION": r"\!",
@@ -60,6 +58,8 @@ listeTypeToken = {
     "VIRGULE": r"\,",
     "ACCOLOUVRANTE": r"\{",
     "ACCOLFERMANTE": r"\}",
+    "CROCHETG": r"\[",
+    "CROCHETD": r"\]",
     "AFFECTATION": r"\=",
 }
 
@@ -81,11 +81,11 @@ operateur = {
 }
 
 
-def analyseLexicale():
+def analyseLexicale(fichier):
     global position
     global codeSource
-    with open("./code.txt", "r", encoding="utf-8") as fichier:
-        codeSource = fichier.read().replace("\n", "")
+    with open("./" + fichier, "r", encoding="utf-8") as fichier:
+        codeSource = fichier.read().replace("\n", "").replace("\t", "")
         while position <= len(codeSource) - 1:
             try:
                 caractereActuel = codeSource[position]
@@ -110,9 +110,9 @@ def analyseLexicale():
                                 position = position + 1
                             elif cle == "IDENTIFIER":
                                 identifier = caractereActuel
-                                while (
-                                    position + 1 <= len(codeSource) - 1
-                                    and codeSource[position + 1].isalnum()
+                                while position + 1 <= len(codeSource) - 1 and (
+                                    codeSource[position + 1].isalnum()
+                                    or codeSource[position + 1] == "_"
                                 ):
                                     position = position + 1
                                     identifier = identifier + str(codeSource[position])
@@ -120,6 +120,10 @@ def analyseLexicale():
                                     token = Token("IF", "if")
                                 elif identifier == "else":
                                     token = Token("ELSE", "else")
+                                elif identifier == "debug":
+                                    token = Token("DEBUG", "debug")
+                                elif identifier == "return":
+                                    token = Token("RETURN", "return")
                                 elif identifier == "int":
                                     token = Token("INT", "int")
                                 elif identifier == "while":
@@ -138,7 +142,7 @@ def analyseLexicale():
                                     token = Token("OU", "||")
                                     position = position + 2
                                 else:
-                                    raise ValueError("Erreur fatale")
+                                    raise ValueError("ERREUR FATALE")
                                 listeToken.append(token)
                             elif cle == "ESPERLUETTE":
                                 if (
@@ -148,7 +152,8 @@ def analyseLexicale():
                                     token = Token("ET", "&&")
                                     position = position + 2
                                 else:
-                                    raise ValueError("Erreur fatale")
+                                    token = Token("ESPERL", "&")
+                                    position = position + 1
                                 listeToken.append(token)
                             elif cle == "INFERIEUR":
                                 if (
@@ -200,9 +205,7 @@ def analyseLexicale():
                                 position = position + 1
                             break
                     if not caractere_valide_trouve:
-                        raise ValueError(
-                            "Erreur: caractère inconnu ('" + caractereActuel + "')"
-                        )
+                        raise ValueError("ERREUR FATALE")
             except ValueError as e:
                 print(e)
                 break
@@ -220,7 +223,7 @@ def check(type_):
 
 def accept(type_):
     if not check(type_):
-        raise ValueError("Erreur Fatal", type_, token.type_)
+        raise ValueError("ERREUR FATALE")
 
 
 def next():
@@ -252,13 +255,13 @@ def Chercher(nom):
     for valeur in reversed(TableSymbole):
         if valeur[0] == nom:
             return valeur[1]
-    raise ValueError("Erreur fatale")
+    raise ValueError("ERREUR FATALE")
 
 
 def Declarer(nom):
     for valeur in reversed(TableSymbole):
         if valeur[0] == nom:
-            raise ValueError("Erreur fatale")
+            raise ValueError("ERREUR FATALE")
         if valeur[0] == " ":
             break
     S = Symbole(nom)
@@ -281,39 +284,55 @@ def atome():
 
 def prefixe():
     if check("MOINS"):
-        N = prefixe()
-        return Noeud("N_MOINS_UNAIRE", N)
+        P = prefixe()
+        N = Noeud("N_MOINS_UNAIRE", "")
+        N.ajouter_enfant(P)
+        return N
     elif check("PEXCLAMATION"):
-        N = prefixe()
-        return Noeud("N_NOT", N)
+        P = prefixe()
+        N = Noeud("N_NOT", "")
+        N.ajouter_enfant(P)
+        return N
     elif check("PLUS"):
-        N = prefixe()
-        return N
+        P = prefixe()
+        return P
     elif check("MULT"):
-        N = prefixe()
-        return Noeud("N_INDIRECTION", N)
-    elif check("ESPERL"):
-        N = prefixe()
-        return Noeud("N_ADRESSE", N)
-    else:
-        N = atome()
+        P = prefixe()
+        N = Noeud("N_INDIRECTION", last.valeur)
+        N.ajouter_enfant(P)
         return N
+    elif check("ESPERL"):
+        P = prefixe()
+        N = Noeud("N_ADRESSE", last.valeur)
+        N.ajouter_enfant(P)
+        return N
+    else:
+        S = suffixe()
+        return S
 
 
-# def suffixe():
-#    N1 = Atome()
-#    if check("PARENTHG"):
-#        N = Noeud("N_APPEL", N1)
-#        while not check("PARENTHD"):
-#            N.ajouter_enfant(expression(0))
-#            if check("PARENTHD"):
-#                break
-#            accept("VIRGULE")
-#    elif check("CROCHETG"):
-#        e = expression(0)
-#        accept("CROCHETD")
-#        Creer un noeud indice avec comme enfant "PLUS" et qui a comme enfant "A" et "E"
-#    return N
+def suffixe():
+    A = atome()
+    if check("PARENTHG"):
+        N = Noeud("N_APPEL", "")
+        N.ajouter_enfant(A)
+        while not check("PARENTHD"):
+            N.ajouter_enfant(expression(0))
+            if check("PARENTHD"):
+                break
+            accept("VIRGULE")
+        return N
+    elif check("CROCHETG"):
+        E = expression(0)
+        accept("CROCHETD")
+        N = Noeud("N_INDIRECTION", "")
+        P = Noeud("N_PLUS", "")
+        N.ajouter_enfant(P)
+        P.ajouter_enfant(A)
+        P.ajouter_enfant(E)
+        return N
+    else:
+        return A
 
 
 def expression(prioMin):
@@ -353,6 +372,18 @@ def instruction():
         if I2 is not None:
             N.ajouter_enfant(I2)
         return N
+    elif check("DEBUG"):
+        E = expression(0)
+        accept("POINTVIRGULE")
+        N = Noeud("N_DEBUG", "")
+        N.ajouter_enfant(E)
+        return N
+    elif check("RETURN"):
+        E = expression(0)
+        accept("POINTVIRGULE")
+        N = Noeud("N_RETURN", "")
+        N.ajouter_enfant(E)
+        return N
     elif check("INT"):
         N = Noeud("N_SEQUENCE", "")
         while True:
@@ -387,7 +418,7 @@ def instruction():
         accept("PARENTHD")
         I = instruction()
         S1 = Noeud("N_SEQUENCE", "")
-        D1 = Noeud("N_DROP", "")
+        D1 = Noeud("N_DROP", " ")
         L = Noeud("N_LOOP", "")
         C = Noeud("N_COND", "")
         S2 = Noeud("N_SEQUENCE", "")
@@ -415,20 +446,20 @@ def instruction():
 
 
 def analyseSyntaxique():
-    # accept("INT")
-    # accept("IDENTIFIER")
-    # N = Noeud("N_FONCTION", nom)
-    # accept("PARENTHG")
-    # while check("INT"):
-    #    accept("IDENTIFIER")
-    #    N.ajouter_enfant(Noeud("DECL", last.valeur))
-    #    if check("POINTVIRGULE"):
-    #        continue
-    #    break
-    # accept("PARENTHD")
-    # i = instruction()
-    # N.ajouter_enfant(i)
-    return instruction()
+    accept("INT")
+    accept("IDENTIFIER")
+    N = Noeud("N_FONCTION", last.valeur)
+    accept("PARENTHG")
+    while check("INT"):
+        accept("IDENTIFIER")
+        N.ajouter_enfant(Noeud("N_DECLARE", last.valeur))
+        if check("VIRGULE"):
+            continue
+        break
+    accept("PARENTHD")
+    i = instruction()
+    N.ajouter_enfant(i)
+    return N
 
 
 def genecode(N):
@@ -439,7 +470,7 @@ def genecode(N):
         print(f"push {N.valeur}")
     elif N.type == "N_MOINS_UNAIRE":
         print("push 0")
-        print("push " + N.valeur.valeur)
+        print("push " + N.enfants[0].valeur)
         print("sub")
     elif N.type == "NOT":
         genecode(N.enfants[0])
@@ -451,6 +482,7 @@ def genecode(N):
         "N_MOINS",
         "N_MULT",
         "N_DIV",
+        "N_MODULO",
         "N_EQUIVALENT",
         "N_DIFFERENT",
         "N_INFERIEUR",
@@ -469,6 +501,8 @@ def genecode(N):
             operation = "mul"
         elif N.type == "N_DIV":
             operation = "div"
+        elif N.type == "N_MODULO":
+            operation = "mod"
         elif N.type == "N_EQUIVALENT":
             operation = "cmpeq"
         elif N.type == "N_DIFFERENT":
@@ -491,6 +525,24 @@ def genecode(N):
     elif N.type == "N_DROP":
         genecode(N.enfants[0])
         print("drop 1")
+    elif N.type == "N_DEBUG":
+        genecode(N.enfants[0])
+        print("dbg")
+    elif N.type == "N_RETURN":
+        genecode(N.enfants[0])
+        print("ret")
+    elif N.type == "N_APPEL":
+        if N.enfants[0].type != "N_REFERENCE":
+            raise ValueError("ERREUR FATALE")
+        if N.enfants[0].symbole.type != "FONCTION":
+            raise ValueError("ERREUR FATALE")
+        print("prep " + str(N.enfants[0].valeur))
+        for idx, enfant in enumerate(N.enfants):
+            if idx == 0:
+                continue
+            genecode(enfant)
+        print("call " + str(len(N.enfants) - 1))
+
     elif N.type == "N_DECLARE":
         pass
     elif N.type == "N_BLOCK":
@@ -503,36 +555,39 @@ def genecode(N):
         if N.symbole.type == "VARLOC":
             print("get " + str(N.symbole.position))
         else:
-            raise ValueError("Erreur fatale")
+            raise ValueError("ERREUR FATALE")
     elif N.type == "N_AFFECTATION":
         genecode(N.enfants[1])
         print("dup")
-        if N.enfants[0].type != "N_REFERENCE":
-            raise ValueError("Erreur fatale")
-        if N.enfants[0].symbole.type == "VARLOC":
+        if N.enfants[0].type == "N_REFERENCE":
             print("set " + str(N.enfants[0].symbole.position))
+        elif N.enfants[0].type == "N_INDIRECTION":
+            genecode(N.enfants[0].enfants[0])
+            print("write")
         else:
-            raise ValueError("Erreur fatale")
+            raise ValueError("ERREUR FATALE")
     elif N.type == "N_COND":
         l1 = 0
         l2 = 0
         if len(N.enfants) == 2:
             l1 = nbLabel
-            nbLabel += 1
+            nbLabel = nbLabel + 1
             genecode(N.enfants[0])
             print("jumpf l" + str(l1))
             genecode(N.enfants[1])
             print(".l" + str(l1))
         else:
             l1 = nbLabel
-            nbLabel += 1
+            nbLabel = nbLabel + 1
+            l2 = nbLabel
+            nbLabel = nbLabel + 1
             genecode(N.enfants[0])
-            print("jumpf if_" + str(l1))
+            print("jumpf l" + str(l1))
             genecode(N.enfants[1])
-            print("jumpf else_" + str(l1))
-            print(".if_" + str(l1))
+            print("jump l" + str(l2))
+            print(".l" + str(l1))
             genecode(N.enfants[2])
-            print(".else_" + str(l1))
+            print(".l" + str(l2))
     elif N.type == "N_TARGET":
         print(".l" + str(labelContinue))
     elif N.type == "N_BREAK":
@@ -541,67 +596,36 @@ def genecode(N):
         print("jump l" + str(labelContinue))
     elif N.type == "N_LOOP":
         labelDebut = nbLabel
-        nbLabel += 1
+        nbLabel = nbLabel + 1
         saveContinue = labelContinue
-        saveBreak = labelBreak
         labelContinue = nbLabel
-        nbLabel += 1
+        nbLabel = nbLabel + 1
         labelBreak = nbLabel
-        nbLabel += 1
+        nbLabel = nbLabel + 1
         print(".l" + str(labelDebut))
         for enfant in N.enfants:
             genecode(enfant)
         print("jump l" + str(labelDebut))
         print(".l" + str(labelBreak))
         labelContinue = saveContinue
-        labelBreak = saveBreak
     elif N.type == "N_FONCTION":
-        #        print(".", N.valeur)
-        #        print("resn", N.S.nbVar)
-        #        genecode(N.dernierEnfant)
-        #        print("push 0")
-        #        print("ret")
-        pass
-    elif N.type == "N_APPEL":
-        # if N.enfants[0].type != "N_REFERENCE":
-        #    Erreurfatale()
-        # if N.enfants[0].S.type != "N_FONCTION":
-        #    Erreurfatale()
-        # print("prep", N.enfant[0].valeur)
-        # print("call 0")
-        # pour chaque enfant sauf premier:
-        #    genecode(enfant)
-        # print("call " + nbEnfant - 1)
-        pass
-    elif N.type == "N_AFFECTATION":
-        # genecode(N.enfant[1])
-        # print("dup")
-        # if N.enfants[0].type == "N_REF":
-        #     #print("")
-        #     pass
-        # elif N.enfants[0].type == "N_INDIRECTION":
-        #     genecode(N.enfants[0].enfants[0])
-        #     print("write")
-        # else:
-        #     raise ValueError("Erreur fatale")
-        pass
+        print("." + str(N.valeur))
+        print("resn " + str(N.symbole.nbVar))
+        genecode(N.enfants[-1])
+        print("push 0")
+        print("ret")
     elif N.type == "N_INDIRECTION":
-        # gencode(N.enfants[0])
-        # print("read")
-        pass
+        genecode(N.enfants[0])
+        print("read")
     elif N.type == "N_ADRESSE":
-        #        if N.enfants[0].type != "N_REF": et verifier que c'est une variable locale
-        #            raise ValueError("Type de nœud inconnu")
-        #        print("prep .start")
-        #        print("swap")
-        #        print("drop 1")
-        #        print("push", N.enfants[0].Symbol.position + 1)
-        #        print("sub")
-        pass
+        if N.enfants[0].type != "N_REFERENCE" and N.enfants[0].symbole.type == "VARLOC":
+            raise ValueError("ERREUR FATALE")
+        print("prep start")
+        print("swap")
+        print("drop 1")
+        print("push", N.enfants[0].symbole.position + 1)
+        print("sub")
 
-
-#    else:
-#        raise ValueError("Type de nœud inconnu", N.type)
 
 def analyseSemantique(Noeud):
     global nbVar
@@ -619,35 +643,45 @@ def analyseSemantique(Noeud):
         case "N_REFERENCE":
             S = Chercher(Noeud.valeur)
             Noeud.symbole = S
+        case "N_FONCTION":
+            nbVar = 0
+            S = Declarer(Noeud.valeur)
+            Begin()
+            for enfant in Noeud.enfants:
+                analyseSemantique(enfant)
+            End()
+            S.type = "FONCTION"
+            S.nbVar = nbVar - (len(Noeud.enfants) - 1)
+            Noeud.symbole = S
         case _:
             for enfant in Noeud.enfants:
                 analyseSemantique(enfant)
 
 
-#    nbVar, nbVal = 0
-#    if(Noeud.type == NdDeclare):
-#       S = declare(N.valeur);
-#        S.position = nbVar
-#        nbVar = nbVar + 1
-#        S.type = varLocale
-#    elif(Noeud.type == NdRef):
-#            S = chercher(N.valeur)
-#            S.position = nbVal
-#            nbVal = nbVal + 1
-#            S.type = valLocale
-#    elif(Noeud.type == "N_FONCTION"):
-#        nbVar = 0
-#        S = declare(N.valeur)
-#        begin()
-#        pour chaque enfant:
-#            analyseSemantique(enfant)
-#        end()
-#        S.type = SymboleFonction
-#        S.nbVar = nbVar - N.NBenfants - 1
-#        N.S = S
-#    else:
-#        for E in N.enfants:
-#            analyseSemantique(E)
+def compile(fichier):
+    try:
+        compile_fichier("lib.c")
+        global position
+        position = 0
+        compile_fichier(fichier)
+        print(".start")
+        print("prep init")
+        print("call 0")
+        print("prep main")
+        print("call 0")
+        print("halt")
+    except ValueError as e:
+        print(e)
+
+
+def compile_fichier(fichier):
+    analyseLexicale(fichier)
+    next()
+    while token.type_ != "EOF":
+        A = analyseSyntaxique()
+        analyseSemantique(A)
+        genecode(A)
+
 
 codeSource = ""
 position = 0
@@ -658,24 +692,9 @@ nbVar = 0
 nbLabel = 0
 labelContinue = 0
 labelBreak = 0
-analyseLexicale()
-next()
-print("Liste des tokens :")
-for x in listeToken:
-    print(x.type_ + " " + x.valeur)
-print()
-print("Arbre de token :")
-while token.type_ != "EOF":
-    A = analyseSyntaxique()
-    A.afficher()
-    print()
-    analyseSemantique(A)
-    print("Genecode :")
-    print("resn " + str(nbVar))
-    genecode(A)
-    print("drop " + str(nbVar))
-# print("Generation du code :")
-# assembleur = racine.genecode()
-# for instructions in assembleur:
-# print(instructions)
-# analyseSyntaxique()
+
+if len(sys.argv) < 2:
+    print("Veuillez spécifier le fichier en argument.")
+    sys.exit(1)
+fichier = sys.argv[1]
+compile(fichier)
