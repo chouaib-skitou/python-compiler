@@ -55,7 +55,7 @@ NODES_TYPES = {
     'Node_IDENTIFIER': 'Node_IDENTIFIER',
     'Node_CONSTANT': 'Node_CONSTANT',
     'Node_MINUS_UNARY': 'Node_MINUS_UNARY',
-    'UNAIRE': '!',
+    'UNAIRE': 'Node_Not',
     'BINAIRE': '-',
     'BINAIRE': '+',
     'BINAIRE' : '*',
@@ -196,16 +196,19 @@ class Node:
         global labelContinue
         global labelBreak
         if self.type == "Node_CONSTANT":
-            result = f"push {self.value}"
-            return result
+            print("push " + str(self.value))
         elif self.type == "Node_IDENTIFIER":
-            result = f"push {self.value}"
-            return result
-        elif self.type == "UNAIRE":
-            if self.valeur == "!":
-                genecode_enfant0 = self.children[0].genecode()
-                return genecode_enfant0 + [f"not"]
-        elif self.type == "BINAIRE":
+            print("push " + str(self.value))
+        elif self.type == "Node_Not":
+            self.children[0].genecode()
+            print("not")
+        elif self.type in ["BINAIRE",    
+                           "Node_OR",
+                            "Node_AND",
+                            "Node_EQUAL",
+                            "Node_NOT_EQUAL",
+                            "Node_GREATER_THAN",
+                            "Node_LESS_THAN"]:
             genecode_enfant0 = self.children[0].genecode()
             genecode_enfant1 = self.children[1].genecode()
             operation = ""
@@ -217,10 +220,24 @@ class Node:
                 operation = "mul"
             elif self.value == "/":
                 operation = "div"
-            return genecode_enfant0 + genecode_enfant1 + [f"{operation}"]
+            elif self.value == "||":
+                operation = "or"
+            elif self.value == "&&":
+                operation = "and"
+            elif self.value == "==":
+                operation = "cmpeq"
+            elif self.value == "!=":
+                operation = "cmpne"
+            elif self.value == ">":
+                operation = "cmpgt"
+            elif self.value == "<":
+                operation = "cmplt"
+            genecode_enfant0
+            genecode_enfant1
+            print(operation)
         elif self.type == "Node_Debug":
-            genecode_enfant = self.children[0].genecode()
-            return genecode_enfant + [f"push dbg"]
+            self.children[0].genecode()
+            print("dbg")
         elif self.type == "Node_Drop":
             self.children[0].genecode()
             print("drop 1")
@@ -233,7 +250,7 @@ class Node:
                 child.genecode()
         elif self.type == "Node_Ref" : #gestions des noeuds de variables
             if(self.symbole.type == "VarLoc"):
-                print("get "+ self.symbole.position)
+                print("get "+ str(self.symbole.position))
         elif self.type == "Node_Cond" :
             indice1 = 0
             indice2 = 0
@@ -248,13 +265,15 @@ class Node:
             else:
                 indice1 = nbLabel
                 nbLabel += 1
+                indice2 = nbLabel
+                nbLabel += 1
                 self.children[0].genecode()
                 print("jumpf if_" + str(indice1))
                 self.children[1].genecode()
-                print("jumpf else_" + str(indice1))
+                print("jump else_" + str(indice2))
                 print(".if_" + str(indice1))
                 self.children[2].genecode()
-                print(".else_" + str(indice1))
+                print(".else_" + str(indice2))
         elif self.type == "Node_Target" :
             print(".l" + str(labelContinue))
         elif self.type == "Node_Break" :
@@ -278,7 +297,7 @@ class Node:
             labelContinue = saveContinue
             labelBreak = saveBreak
         elif self.type == "Node_Affectation" :
-            print(self.children[1].genecode())
+            self.children[1].genecode()
             print("dup")
             if(self.children[0].type != "Node_Ref"):
                 raise Exception("Il ne s'agit pas d'une variable")
@@ -539,6 +558,7 @@ def instruction():
         E2 = Expression(0)
         accept(TOKEN_TYPES['Point_virgule'])
         E3 = Expression(0)
+        accept(TOKEN_TYPES['CLOSE_PAREN'])
         I = instruction()
         NS1 = Node(NODES_TYPES['Node_Seq'],None)
         ND1 = Node(NODES_TYPES['Node_Drop'],None)
