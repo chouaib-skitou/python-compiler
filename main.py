@@ -188,13 +188,6 @@ class Node:
     def get_children(self):
         return self.children
 
-    # def affiche(self):
-    #     if(self.symbole == None):
-    #         print("Noeud de type : ", self.type, ", Valeur est : ", self.value , " , Pas de Symbole")
-    #     else :
-    #         print("Noeud de type : ", self.type, ", Valeur est : ", self.value , " , Symbole : ", self.symbole)
-    #     for child in self.children:
-    #         child.affiche()
     def affiche(self, niveau=0):
         indent = "  " * niveau
         print(f"{indent}{self.type}: {self.value}")
@@ -441,7 +434,6 @@ def AnaLex(chaine):
         else:
             raise Exception("Le token est invalid")
         
-        #tokenG.affiche()
         position = position + 1
         global Token_tab
         Token_tab.append(tokenG)
@@ -737,18 +729,12 @@ def main():
         text = file.read()
         AnaLex(text) #initialisation de l'analyse Lexicale
         next() #Appel à la fonction next
-        print("\nListe des tokens :\n")
-        for x in Token_tab:
-            x.affiche()
+        print('.start')
         while(tokenG.type != "EOF"):
             A = AnaSyn() # Analyse Synthaxique
-            # Affichage de l'arbre
-            print("\nListe des noeud :\n")
-            A.affiche()
             AnaSem(A)
-            print('.start')
             A.genecode()
-            print('.halt')
+        print('.halt')
 nbVar = 0
 nbLabel = 0
 labelContinue = 0
