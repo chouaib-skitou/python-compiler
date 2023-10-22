@@ -753,12 +753,16 @@ def main():
         text = file.read()
         AnaLex(text) #initialisation de l'analyse Lexicale
         next() #Appel à la fonction next
-        print('.start')
         while(tokenG.type != "EOF"):
             A = AnaSyn() # Analyse Synthaxique
             AnaSem(A)
             A.genecode()
-        print('halt')
+        print(".start")
+        print("prep init")
+        print("call 0")
+        print("prep main")
+        print("call 0")
+        print("halt")
 nbVar = 0
 nbLabel = 0
 labelContinue = 0
