@@ -86,6 +86,8 @@ NODES_TYPES = {
     'Node_LESS_THAN' : '<',
     'Node_GREATER_THAN_EQUAL' : '>=',
     'Node_LESS_THAN_EQUAL' : '<=',
+    'Node_Function' : 'Node_Function',
+    'Node_appel' :  'Node_appel',
 }
 
 MOTS_CLES = {
@@ -94,7 +96,6 @@ MOTS_CLES = {
     'if': 'if',
     'else': 'else',
     'return': 'return',
-    'main': 'main',
     'void': 'void',
     'char': 'char',
     'float': 'float',
@@ -320,6 +321,23 @@ class Node:
             if(self.children[0].symbole.type == "VarLoc"):
                 result = f"set {self.children[0].symbole.position}"
                 print(result)
+        elif self.type == "Node_appel":
+            if self.children[0].type != "Node_Ref":
+                raise ValueError("ERREUR FATALE")
+            if self.children[0].symbole.type != "Function":
+                raise ValueError("ERREUR FATALE")
+            print("prep " + str(self.children[0].value))
+            for idx, enfant in enumerate(self.children):
+                if idx == 0:
+                    continue
+                enfant.genecode()
+            print("call " + str(len(self.children) - 1))
+        elif self.type == "Node_Function":
+            print("." + str(self.value))
+            print("resn " + str(self.symbole.nVar))
+            self.children[-1].genecode()
+            print("push 0")
+            print("ret")
         else:
             print(self.type)
             raise ValueError("Type de nœud inconnu")
@@ -462,7 +480,7 @@ def Atome():
         pass
     #Gestion des variables
     elif(check(TOKEN_TYPES['IDENTIFIER'])):
-        return Node(NODES_TYPES["Node_Ref"],last.value,(None,"VarLoc",None,None))
+        return Node(NODES_TYPES["Node_Ref"],last.value)
     elif(check(TOKEN_TYPES['OPEN_PAREN'])):
         N = Expression(0)
         while(last.type != TOKEN_TYPES['CLOSE_PAREN']):
@@ -496,8 +514,22 @@ def prefix():
         N = prefix()
         return N
     else :
-        N = Atome()
+        N = Suffixe()
         return N
+
+def Suffixe():
+    A = Atome()
+    if check(TOKEN_TYPES["OPEN_PAREN"]):
+        N = Node(NODES_TYPES["Node_appel"], "",None)
+        N.children.append(A)
+        while not check(TOKEN_TYPES["CLOSE_PAREN"]):
+            N.children.append(Expression(0))
+            if check(TOKEN_TYPES["CLOSE_PAREN"]):
+                break
+            accept(TOKEN_TYPES["VIRGULE"])
+        return N
+    else:
+        return A
 
 def Expression(Prio_min): #Parseur de Brat, gestions des associativités et des priorités
     N = prefix()
@@ -660,13 +692,37 @@ def AnaSem(N):
     elif(N.type == 'Node_Ref'):
         S = Chercher(N.value)
         N.symbole = S
+    elif(N.type == 'Node_Function'):
+        nbVar = 0
+        S = Declarer(N.value)
+        Begin()
+        for child in N.children:
+            AnaSem(child)
+        End()
+        S.type = "Function"
+        S.nVar = nbVar - (len(N.children) - 1)
+        N.symbole = S
     else:
         for e in N.children:
             AnaSem(e)
 
 
 def AnaSyn():
-    return instruction() #expression()  
+    #return instruction() #expression()  
+    accept(TOKEN_TYPES['int'])
+    accept(TOKEN_TYPES["IDENTIFIER"])
+    N = Node(NODES_TYPES['Node_Function'],last.value,(None,"Function",None,None))
+    accept(TOKEN_TYPES["OPEN_PAREN"])
+    while check(TOKEN_TYPES['int']):
+        accept(TOKEN_TYPES["IDENTIFIER"])
+        N.children.append(Node(NODES_TYPES['Node_Decla'],last.value,(None,"VarLoc",None,None)))
+        if check(TOKEN_TYPES["VIRGULE"]):
+            continue
+        break
+    accept(TOKEN_TYPES["CLOSE_PAREN"])
+    i = instruction()
+    N.children.append(i)
+    return N
 
 if len(sys.argv) < 2:
     print("Veuillez spécifier le fichier en argument.")
