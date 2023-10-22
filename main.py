@@ -1,3 +1,5 @@
+import sys
+
 EOF = 'EOF'
 
 TOKEN_TYPES = {
@@ -666,24 +668,31 @@ def AnaSem(N):
 def AnaSyn():
     return instruction() #expression()  
 
+if len(sys.argv) < 2:
+    print("Veuillez spécifier le fichier en argument.")
+    sys.exit(1)
+fichier = sys.argv[1]
+
 # Main program
 def main():
     global nbVar
     global nbLabel
-    with open('test_1.txt', 'r') as file: # ouverture du fichier
+    with open('./'+fichier, 'r') as file: # ouverture du fichier
         text = file.read()
         AnaLex(text) #initialisation de l'analyse Lexicale
         next() #Appel à la fonction next
-        print("Liste des tokens :")
+        print("\nListe des tokens :\n")
         for x in Token_tab:
             x.affiche()
-        print()
         while(tokenG.type != "EOF"):
             A = AnaSyn() # Analyse Synthaxique
             # Affichage de l'arbre
+            print("\nListe des noeud :\n")
             A.affiche()
             AnaSem(A)
-            A.genecode() 
+            print('.start')
+            A.genecode()
+            print('.halt')
 nbVar = 0
 nbLabel = 0
 labelContinue = 0

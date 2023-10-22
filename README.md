@@ -1,3 +1,4 @@
+
 # Mode d'emploi : Lancement du code
 
 Ce guide vous aidera à exécuter le code sans avoir besoin de télécharger des librairies supplémentaires. Suivez ces étapes simples pour obtenir le code assembleur à partir de votre fichier de test.
@@ -14,18 +15,17 @@ Ce guide vous aidera à exécuter le code sans avoir besoin de télécharger des
 
 ## Étapes à suivre
 
-1. **Choisir le fichier de test** : Dans le code, repérez la ligne :
+1. **Exécution du code avec le fichier de test** : Pour compiler un fichier, utilisez la commande suivante dans votre terminal ou invite de commande, en remplaçant `nom_du_fichier.c` par le chemin de votre fichier de test :
 
-    ```python
-    with open('test_1.txt', 'r') as file:
-    ```
+   ```bash
+   python chemin_vers_main.py nom_du_fichier.c
+   ```
 
-    Remplacez `'test_1.txt'` par le chemin de votre fichier de test. Par exemple, si vous avez un fichier nommé `mon_test.txt`, modifiez la ligne comme suit :
+   Par exemple, si vous souhaitez compiler `test_1.c` et que votre script est situé à `c:\Users\pc_su\Desktop\Polytech Paris-Saclay\APP4\Compilation\python-compiler\main.py`, utilisez :
 
-    ```python
-    with open('mon_test.txt', 'r') as file:
-    ```
+   ```bash
+   python -u "c:\Users\pc_su\Desktop\Polytech Paris-Saclay\APP4\Compilation\python-compiler\main.py" test_1.c
+   ```
 
-2. **Exécution du code** : Une fois que vous avez modifié le chemin du fichier, exécutez le code. Vous verrez le code assembleur affiché dans la console.
+2. **Consulter le résultat** : Après exécution, le code assembleur sera sauvegardé dans un fichier nommé `result.s`. Vous pouvez ouvrir ce fichier avec n'importe quel éditeur de texte pour consulter ou modifier le code assembleur généré.
 
-3. **Consulter le résultat** : Outre la console, le code assembleur sera également sauvegardé dans un fichier nommé `resultat.s`. Vous pouvez ouvrir ce fichier avec n'importe quel éditeur de texte pour consulter ou modifier le code assembleur généré.
