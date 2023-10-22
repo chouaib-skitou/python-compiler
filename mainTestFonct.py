@@ -96,7 +96,6 @@ MOTS_CLES = {
     'if': 'if',
     'else': 'else',
     'return': 'return',
-    'main': 'main',
     'void': 'void',
     'char': 'char',
     'float': 'float',
@@ -529,6 +528,8 @@ def Suffixe():
                 break
             accept(TOKEN_TYPES["VIRGULE"])
         return N
+    else:
+        return A
 
 def Expression(Prio_min): #Parseur de Brat, gestions des associativités et des priorités
     N = prefix()

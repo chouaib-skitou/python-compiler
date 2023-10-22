@@ -1,4 +1,4 @@
-{
+int fonct(){
     int a ;
     a = 12;
     if(a<=0){
