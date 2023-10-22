@@ -232,6 +232,8 @@ class Node:
                 operation = "or"
             elif self.value == "&&":
                 operation = "and"
+            elif self.value == "%":
+                operation = "mod"
             elif self.value == "==":
                 operation = "cmpeq"
             elif self.value == "!=":
@@ -317,14 +319,11 @@ class Node:
         elif self.type == "Node_Affectation" :
             self.children[1].genecode()
             print("dup")
-            if(self.children[0].type != "Node_Ref"):
-                raise Exception("Il ne s'agit pas d'une variable")
+            if self.children[0].type == "Node_Ref":
+                print("set " + str(self.children[0].symbole.position))
             elif self.children[0].type == "Node_indirection":
                 self.children[0].children[0].genecode()
                 print("write")
-            if(self.children[0].symbole.type == "VarLoc"):
-                result = f"set {self.children[0].symbole.position}"
-                print(result)
         elif self.type == "Node_appel":
             if self.children[0].type != "Node_Ref":
                 raise ValueError("ERREUR FATALE")
@@ -345,7 +344,7 @@ class Node:
         elif self.type == "Node_Adresse":
             if self.children[0].type != "Node_Ref" and self.children[0].symbole.type == "VarLoc":
                 raise ValueError("ERREUR FATALE")
-            print("prep .start")
+            print("prep start")
             print("swap")
             print("drop 1")
             print("push", self.children[0].symbole.position + 1)
@@ -768,12 +767,16 @@ def main():
         text = file.read()
         AnaLex(text) #initialisation de l'analyse Lexicale
         next() #Appel à la fonction next
-        print('.start')
         while(tokenG.type != "EOF"):
             A = AnaSyn() # Analyse Synthaxique
             AnaSem(A)
             A.genecode()
-        print('halt')
+        print(".start")
+        print("prep init")
+        print("call 0")
+        print("prep main")
+        print("call 0")
+        print("halt")
 nbVar = 0
 nbLabel = 0
 labelContinue = 0
