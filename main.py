@@ -343,7 +343,7 @@ class Node:
         elif self.type == "Node_Adresse":
             if self.children[0].type != "Node_Ref" and self.children[0].symbole.type == "VarLoc":
                 raise ValueError("ERREUR FATALE")
-            print("prep .start")
+            print("prep start")
             print("swap")
             print("drop 1")
             print("push", self.children[0].symbole.position + 1)
