@@ -734,7 +734,7 @@ def main():
             A = AnaSyn() # Analyse Synthaxique
             AnaSem(A)
             A.genecode()
-        print('.halt')
+        print('halt')
 nbVar = 0
 nbLabel = 0
 labelContinue = 0
