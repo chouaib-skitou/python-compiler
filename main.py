@@ -340,6 +340,14 @@ class Node:
             self.children[-1].genecode()
             print("push 0")
             print("ret")
+        elif self.type == "Node_Adresse":
+            if self.children[0].type != "Node_Ref" and self.children[0].symbole.type == "VarLoc":
+                raise ValueError("ERREUR FATALE")
+            print("prep .start")
+            print("swap")
+            print("drop 1")
+            print("push", self.children[0].symbole.position + 1)
+            print("sub")
         else:
             print(self.type)
             raise ValueError("Type de nœud inconnu")
@@ -405,7 +413,6 @@ def AnaLex(chaine):
                 position += 1
             else:
                 tokenG = Token(TOKEN_TYPES['ESPERL'], '&')
-                position += 1
         elif c == '<':
             next_char = chaine[position + 1] if position + 1 < len(chaine) else None
             if next_char == '=':
