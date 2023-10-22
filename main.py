@@ -230,6 +230,8 @@ class Node:
                 operation = "or"
             elif self.value == "&&":
                 operation = "and"
+            elif self.value == "%":
+                operation = "mod"
             elif self.value == "==":
                 operation = "cmpeq"
             elif self.value == "!=":
