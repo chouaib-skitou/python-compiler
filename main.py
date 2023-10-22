@@ -315,14 +315,11 @@ class Node:
         elif self.type == "Node_Affectation" :
             self.children[1].genecode()
             print("dup")
-            if(self.children[0].type != "Node_Ref"):
-                raise Exception("Il ne s'agit pas d'une variable")
+            if self.children[0].type == "Node_Ref":
+                print("set " + str(self.children[0].symbole.position))
             elif self.children[0].type == "Node_indirection":
                 self.children[0].children[0].genecode()
                 print("write")
-            if(self.children[0].symbole.type == "VarLoc"):
-                result = f"set {self.children[0].symbole.position}"
-                print(result)
         elif self.type == "Node_appel":
             if self.children[0].type != "Node_Ref":
                 raise ValueError("ERREUR FATALE")
