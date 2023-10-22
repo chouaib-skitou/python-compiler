@@ -51,6 +51,7 @@ TOKEN_TYPES = {
     'long': 'long',
     'short': 'short',
     'signed': 'signed',
+    'ESPERL' : 'ESPERL',
 
 }
 NODES_TYPES = {
@@ -86,6 +87,10 @@ NODES_TYPES = {
     'Node_LESS_THAN' : '<',
     'Node_GREATER_THAN_EQUAL' : '>=',
     'Node_LESS_THAN_EQUAL' : '<=',
+    'Node_Function' : 'Node_Function',
+    'Node_appel' :  'Node_appel',
+    'Node_indirection' : 'Node_indirection',
+    'Node_Adresse' : 'Node_Adresse',
 }
 
 MOTS_CLES = {
@@ -94,7 +99,6 @@ MOTS_CLES = {
     'if': 'if',
     'else': 'else',
     'return': 'return',
-    'main': 'main',
     'void': 'void',
     'char': 'char',
     'float': 'float',
@@ -187,13 +191,6 @@ class Node:
     def get_children(self):
         return self.children
 
-    # def affiche(self):
-    #     if(self.symbole == None):
-    #         print("Noeud de type : ", self.type, ", Valeur est : ", self.value , " , Pas de Symbole")
-    #     else :
-    #         print("Noeud de type : ", self.type, ", Valeur est : ", self.value , " , Symbole : ", self.symbole)
-    #     for child in self.children:
-    #         child.affiche()
     def affiche(self, niveau=0):
         indent = "  " * niveau
         print(f"{indent}{self.type}: {self.value}")
@@ -312,14 +309,37 @@ class Node:
             print(".l" + str(labelBreak))
             labelContinue = saveContinue
             labelBreak = saveBreak
+        elif self.type == "Node_indirection":
+            self.children[0].genecode()
+            print("read")
         elif self.type == "Node_Affectation" :
             self.children[1].genecode()
             print("dup")
             if(self.children[0].type != "Node_Ref"):
                 raise Exception("Il ne s'agit pas d'une variable")
+            elif self.children[0].type == "Node_indirection":
+                self.children[0].children[0].genecode()
+                print("write")
             if(self.children[0].symbole.type == "VarLoc"):
                 result = f"set {self.children[0].symbole.position}"
                 print(result)
+        elif self.type == "Node_appel":
+            if self.children[0].type != "Node_Ref":
+                raise ValueError("ERREUR FATALE")
+            if self.children[0].symbole.type != "Function":
+                raise ValueError("ERREUR FATALE")
+            print("prep " + str(self.children[0].value))
+            for idx, enfant in enumerate(self.children):
+                if idx == 0:
+                    continue
+                enfant.genecode()
+            print("call " + str(len(self.children) - 1))
+        elif self.type == "Node_Function":
+            print("." + str(self.value))
+            print("resn " + str(self.symbole.nVar))
+            self.children[-1].genecode()
+            print("push 0")
+            print("ret")
         else:
             print(self.type)
             raise ValueError("Type de nœud inconnu")
@@ -384,7 +404,8 @@ def AnaLex(chaine):
                 tokenG = Token(TOKEN_TYPES['AND'], '&&')
                 position += 1
             else:
-                raise Exception("Le token est invalide")
+                tokenG = Token(TOKEN_TYPES['ESPERL'], '&')
+                position += 1
         elif c == '<':
             next_char = chaine[position + 1] if position + 1 < len(chaine) else None
             if next_char == '=':
@@ -423,7 +444,6 @@ def AnaLex(chaine):
         else:
             raise Exception("Le token est invalid")
         
-        #tokenG.affiche()
         position = position + 1
         global Token_tab
         Token_tab.append(tokenG)
@@ -462,7 +482,7 @@ def Atome():
         pass
     #Gestion des variables
     elif(check(TOKEN_TYPES['IDENTIFIER'])):
-        return Node(NODES_TYPES["Node_Ref"],last.value,(None,"VarLoc",None,None))
+        return Node(NODES_TYPES["Node_Ref"],last.value)
     elif(check(TOKEN_TYPES['OPEN_PAREN'])):
         N = Expression(0)
         while(last.type != TOKEN_TYPES['CLOSE_PAREN']):
@@ -490,14 +510,35 @@ def prefix():
         N = prefix()
         return N
     elif(check(TOKEN_TYPES['MUL'])) :
-        N = prefix()
+        P = prefix()
+        N = Node(NODES_TYPES["Node_indirection"], last.value)
+        N.children.append(P)
+        return N
+    elif check(TOKEN_TYPES["ESPERL"]):
+        P = prefix()
+        N = Node(NODES_TYPES["Node_Adresse"], last.value)
+        N.children.append(P)
         return N
     elif(check(TOKEN_TYPES['DIV'])) :
         N = prefix()
         return N
     else :
-        N = Atome()
+        N = Suffixe()
         return N
+
+def Suffixe():
+    A = Atome()
+    if check(TOKEN_TYPES["OPEN_PAREN"]):
+        N = Node(NODES_TYPES["Node_appel"], "",None)
+        N.children.append(A)
+        while not check(TOKEN_TYPES["CLOSE_PAREN"]):
+            N.children.append(Expression(0))
+            if check(TOKEN_TYPES["CLOSE_PAREN"]):
+                break
+            accept(TOKEN_TYPES["VIRGULE"])
+        return N
+    else:
+        return A
 
 def Expression(Prio_min): #Parseur de Brat, gestions des associativités et des priorités
     N = prefix()
@@ -660,13 +701,37 @@ def AnaSem(N):
     elif(N.type == 'Node_Ref'):
         S = Chercher(N.value)
         N.symbole = S
+    elif(N.type == 'Node_Function'):
+        nbVar = 0
+        S = Declarer(N.value)
+        Begin()
+        for child in N.children:
+            AnaSem(child)
+        End()
+        S.type = "Function"
+        S.nVar = nbVar - (len(N.children) - 1)
+        N.symbole = S
     else:
         for e in N.children:
             AnaSem(e)
 
 
 def AnaSyn():
-    return instruction() #expression()  
+    #return instruction() #expression()  
+    accept(TOKEN_TYPES['int'])
+    accept(TOKEN_TYPES["IDENTIFIER"])
+    N = Node(NODES_TYPES['Node_Function'],last.value,(None,"Function",None,None))
+    accept(TOKEN_TYPES["OPEN_PAREN"])
+    while check(TOKEN_TYPES['int']):
+        accept(TOKEN_TYPES["IDENTIFIER"])
+        N.children.append(Node(NODES_TYPES['Node_Decla'],last.value,(None,"VarLoc",None,None)))
+        if check(TOKEN_TYPES["VIRGULE"]):
+            continue
+        break
+    accept(TOKEN_TYPES["CLOSE_PAREN"])
+    i = instruction()
+    N.children.append(i)
+    return N
 
 if len(sys.argv) < 2:
     print("Veuillez spécifier le fichier en argument.")
@@ -681,18 +746,12 @@ def main():
         text = file.read()
         AnaLex(text) #initialisation de l'analyse Lexicale
         next() #Appel à la fonction next
-        print("\nListe des tokens :\n")
-        for x in Token_tab:
-            x.affiche()
+        print('.start')
         while(tokenG.type != "EOF"):
             A = AnaSyn() # Analyse Synthaxique
-            # Affichage de l'arbre
-            print("\nListe des noeud :\n")
-            A.affiche()
             AnaSem(A)
-            print('.start')
             A.genecode()
-            print('.halt')
+        print('halt')
 nbVar = 0
 nbLabel = 0
 labelContinue = 0
