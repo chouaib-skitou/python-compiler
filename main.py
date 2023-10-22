@@ -52,6 +52,8 @@ TOKEN_TYPES = {
     'short': 'short',
     'signed': 'signed',
     'ESPERL' : 'ESPERL',
+    'CLOSE_CROCHET': 'CLOSE_CROCHET',
+    'OPEN_CROCHET': 'OPEN_CROCHET',
 
 }
 NODES_TYPES = {
@@ -349,7 +351,7 @@ class Node:
             print("push", self.children[0].symbole.position + 1)
             print("sub")
         else:
-            print(self.type)
+            print("erreur",self.type)
             raise ValueError("Type de nœud inconnu")
 
 
@@ -435,6 +437,10 @@ def AnaLex(chaine):
             tokenG = Token(TOKEN_TYPES['OPEN_ACCOLADE'], c)
         elif c == '}':
             tokenG = Token(TOKEN_TYPES['CLOSE_ACCOLADE'], c)
+        elif c == '[':
+            tokenG = Token(TOKEN_TYPES['OPEN_CROCHET'], c)
+        elif c == ']':
+            tokenG = Token(TOKEN_TYPES['CLOSE_CROCHET'], c)
         elif c == 'dbg':
             tokenG = Token(TOKEN_TYPES['DEBUG'], c)
         elif c.isalnum():
@@ -543,6 +549,15 @@ def Suffixe():
             if check(TOKEN_TYPES["CLOSE_PAREN"]):
                 break
             accept(TOKEN_TYPES["VIRGULE"])
+        return N
+    elif check("OPEN_CROCHET"):
+        E = Expression(0)
+        accept("CLOSE_CROCHET")
+        N = Node(NODES_TYPES["Node_indirection"], None)
+        P = Node(NODES_TYPES["BINAIRE"],"+")
+        N.children.append(P)
+        P.children.append(A)
+        P.children.append(E)
         return N
     else:
         return A
