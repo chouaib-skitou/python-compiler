@@ -1,3 +1,0 @@
-.start
-None
-.halt

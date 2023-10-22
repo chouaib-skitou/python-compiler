@@ -27,5 +27,5 @@ Ce guide vous aidera à exécuter le code sans avoir besoin de télécharger des
    python -u "c:\Users\pc_su\Desktop\Polytech Paris-Saclay\APP4\Compilation\python-compiler\main.py" test_1.c
    ```
 
-2. **Consulter le résultat** : Après exécution, le code assembleur sera sauvegardé dans un fichier nommé `result.s`. Vous pouvez ouvrir ce fichier avec n'importe quel éditeur de texte pour consulter ou modifier le code assembleur généré.
+2. **Consulter le résultat** : Après exécution, le code assembleur sera afficher dans la console.
 
