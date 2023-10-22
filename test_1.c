@@ -5,3 +5,7 @@ int fonct(){
         return 0;
     }
 }
+int main(){
+    int b ;
+    b = fonct() ;
+}

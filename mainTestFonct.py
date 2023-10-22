@@ -522,7 +522,7 @@ def Suffixe():
     if check(TOKEN_TYPES["OPEN_PAREN"]):
         N = Node(NODES_TYPES["Node_appel"], "",None)
         N.children.append(A)
-        while not check(TOKEN_TYPES["OPEN_PAREN"]):
+        while not check(TOKEN_TYPES["CLOSE_PAREN"]):
             N.children.append(Expression(0))
             if check(TOKEN_TYPES["CLOSE_PAREN"]):
                 break
