@@ -1,11 +1,11 @@
-int fonct(){
-    int a ;
-    a = 12;
-    if(a<=0){
-        return 0;
-    }
+int fonct(int b, int c){
+b = 8;
+c = 7;
+return b + c;
 }
 int main(){
-    int b ;
-    b = fonct() ;
+    int k ;
+    int a;
+    int z;
+    k = fonct(a,z) ;
 }
